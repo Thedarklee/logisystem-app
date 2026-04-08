@@ -1,27 +1,39 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Vehiculo from '@/models/Vehiculo';
-import Usuario from '@/models/Usuario';
+import Usuario from '@/models/Usuario'; // Es buena práctica dejarlo para que Mongoose sepa quién es 'Usuario' al hacer el populate
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
     const body = await req.json();
-    const { patente, modelo, conductorId } = body;
+    
+    // 1. Extraemos TODOS los campos que envía el frontend
+    const { patente, marca, modelo, pesoTaraKg, conductorId } = body;
 
-    if (!patente || !conductorId) {
-      return NextResponse.json({ error: "Patente y Conductor son obligatorios" }, { status: 400 });
+    // 2. Validamos que no falte nada importante
+    if (!patente || !conductorId || !marca || !pesoTaraKg) {
+      return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
     }
 
+    // 3. Creamos el vehículo con toda su información
     const nuevoVehiculo = await Vehiculo.create({
       patente: patente.toUpperCase().trim(),
+      marca,          // AGREGADO
       modelo,
+      pesoTaraKg,     // AGREGADO
       conductorAsignado: conductorId,
       isActivo: true
     });
 
-    return NextResponse.json({ mensaje: "Vehículo registrado y asignado", id: nuevoVehiculo._id }, { status: 201 });
+    return NextResponse.json({ 
+      mensaje: "Vehículo registrado y asignado", 
+      id: nuevoVehiculo._id 
+    }, { status: 201 });
+    
   } catch (error: any) {
+    console.error("Error al crear vehículo:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -32,8 +44,8 @@ export async function GET() {
     
     // .populate busca el ID y lo reemplaza por el objeto real del usuario
     const vehiculos = await Vehiculo.find()
-      .populate('conductorAsignado', 'nombre') // Solo trae el campo 'nombre' para que sea rápido
-      .lean(); // .lean() lo hace más ligero para el frontend
+      .populate('conductorAsignado', 'nombre') 
+      .lean(); 
 
     return NextResponse.json(vehiculos);
   } catch (error) {
