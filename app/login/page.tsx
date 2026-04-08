@@ -1,4 +1,4 @@
-"use client"; // Necesario porque usamos useState y eventos del cliente
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,13 +7,13 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError(null);
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -22,15 +22,27 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
+      // 1. Leemos la respuesta como texto crudo primero para atrapar CUALQUIER cosa
+      const text = await res.text();
+      let data;
+      
+      try {
+        // 2. Intentamos convertirlo a JSON
+        data = JSON.parse(text); 
+      } catch (parseError) {
+        // 3. Si falla (ej. Vercel devuelve un error 500 en HTML), lo mostramos crudo
+        throw new Error(`Respuesta no-JSON del servidor (Status ${res.status}): ${text.substring(0, 150)}...`);
+      }
+
       if (res.ok) {
-        // Redirigir al dashboard si todo sale bien
         router.push("/dashboard");
       } else {
-        const data = await res.json();
-        setError(data.error || "Error al iniciar sesión");
+        // 4. MOSTRAR EL ERROR EXACTO QUE MANDA LA API (Con el código HTTP)
+        setError(`Error API (${res.status}): ${data.error || JSON.stringify(data)}`);
       }
-    } catch (err) {
-      setError("Fallo de conexión. Intente más tarde.");
+    } catch (err: any) {
+      // 5. MOSTRAR EL ERROR EXACTO DE RED O DEL CÓDIGO
+      setError(`Error Crítico: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -46,8 +58,13 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Si hay error, lo mostramos */}
-            {error && <p className="text-red-500 text-sm text-center font-bold">{error}</p>}
+            
+            {/* ALERTA DE ERROR DETALLADA PARA DEBUGGING */}
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+                <p className="text-red-700 text-xs font-bold font-mono break-words">{error}</p>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <label className="block text-[0.6875rem] font-bold uppercase tracking-wider text-gray-500" htmlFor="email">Email</label>
@@ -58,7 +75,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="block w-full pl-3 pr-4 py-3 bg-gray-100 border-0 border-b-2 border-gray-300 focus:border-[#420093] focus:ring-0 text-sm rounded-t-lg" 
+                  className="block w-full pl-3 pr-4 py-3 bg-gray-100 border-0 border-b-2 border-gray-300 focus:border-[#420093] focus:ring-0 text-sm rounded-t-lg outline-none" 
                   placeholder="nombre@logisystem.com" 
                 />
               </div>
@@ -73,7 +90,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="block w-full pl-3 pr-4 py-3 bg-gray-100 border-0 border-b-2 border-gray-300 focus:border-[#420093] focus:ring-0 text-sm rounded-t-lg" 
+                  className="block w-full pl-3 pr-4 py-3 bg-gray-100 border-0 border-b-2 border-gray-300 focus:border-[#420093] focus:ring-0 text-sm rounded-t-lg outline-none" 
                   placeholder="••••••••" 
                 />
               </div>
@@ -85,7 +102,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-[#420093] text-white font-bold py-4 rounded-xl shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {loading ? "Verificando..." : "Iniciar Sesión"}
+                {loading ? "Consultando BD..." : "Iniciar Sesión"}
               </button>
             </div>
           </form>
