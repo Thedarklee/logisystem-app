@@ -24,18 +24,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="material-symbols-outlined">history_edu</span> Accesos
           </Link>
 
-          <Link href="/dashboard/accesos" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/accesos' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
-            <span className="material-symbols-outlined">history_edu</span> Accesos
-          </Link>
-
            <Link href="/dashboard/usuarios" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/usuarios' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
             <span className="material-symbols-outlined">Conductores</span> Conductores
           </Link>
-          <Link href="/dashboard/usuarios">Conductores</Link>
 
-          <Link href="/dashboard/vehiculos">Flota de Vehículos</Link> {/* NUEVO */}
+          
+           <Link href="/dashboard/vehiculos" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/vehiculos' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
+            <span className="material-symbols-outlined">Flota de Vehículos</span> Conductores
+          </Link>
 
-         <Link href="/dashboard/accesos">Historial</Link>
+                     <Link href="/dashboard/accesos/nuevo" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/accesos/nuevo' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
+            <span className="material-symbols-outlined">Nuevo Usuario</span> Conductores
+          </Link>
+
         </nav>
       </aside>
 
