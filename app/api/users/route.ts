@@ -43,4 +43,26 @@ export async function POST(req: Request) {
     console.error("Error en registro:", error);
     return NextResponse.json({ error: "Error interno del servidor", detalle: error.message }, { status: 500 });
   }
+
+  
+}
+export async function GET() {
+  try {
+    await dbConnect();
+
+    // Buscamos a los usuarios que tengan el cargo "CONDUCTOR"
+    // .select() nos permite traer solo la info necesaria para el dropdown
+    const conductores = await Usuario.find({ 
+      cargo: 'CONDUCTOR', 
+      isActivo: true 
+    }).select('nombre rut');
+
+    return NextResponse.json(conductores);
+  } catch (error: any) {
+    console.error("Error al obtener conductores:", error);
+    return NextResponse.json(
+      { error: "Error al cargar la lista de conductores" }, 
+      { status: 500 }
+    );
+  }
 }
