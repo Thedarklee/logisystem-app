@@ -59,10 +59,10 @@ const validarRutChileno = (rut: string) => {
     // Si todo está bien, lo enviamos a la API
     try {
       const payload = {
-        rut: formData.rut.replace(/\./g, ''), // Quitamos puntos pero dejamos guion si quieres, o puedes quitarlo
-        patente: formData.patente.replace(/-/g, '').toUpperCase(),
+        rut: formData.rut.trim(), // Lo enviamos tal cual lo escribes
+        patente: formData.patente.toUpperCase().trim(), // Lo enviamos tal cual, con guion
         tipoMovimiento: formData.tipoMovimiento
-      };
+        };
 
       console.log("2. Datos exactos que se envían a la BD:", payload);
 
