@@ -1,4 +1,5 @@
 // src/app/api/users/route.ts
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Usuario from '@/models/Usuario';
