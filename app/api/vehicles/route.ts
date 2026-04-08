@@ -29,10 +29,14 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     await dbConnect();
-    // Traemos los vehículos y "poblamos" la info del conductor asociado
-    const vehiculos = await Vehiculo.find().populate('conductorAsignado', 'nombre email');
+    
+    // .populate busca el ID y lo reemplaza por el objeto real del usuario
+    const vehiculos = await Vehiculo.find()
+      .populate('conductorAsignado', 'nombre') // Solo trae el campo 'nombre' para que sea rápido
+      .lean(); // .lean() lo hace más ligero para el frontend
+
     return NextResponse.json(vehiculos);
   } catch (error) {
-    return NextResponse.json({ error: "Error al obtener flota" }, { status: 500 });
+    return NextResponse.json({ error: "Error al cargar flota" }, { status: 500 });
   }
 }
