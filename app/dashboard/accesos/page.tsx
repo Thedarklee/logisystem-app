@@ -1,6 +1,7 @@
 "use client";
-
+import { useRouter } from 'next/navigation';
 export default function AccesosPage() {
+    const router = useRouter();
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 w-full">
       {/* Page Header */}
@@ -9,9 +10,11 @@ export default function AccesosPage() {
           <h1 className="text-4xl font-extrabold tracking-tight text-violet-900 font-headline">Historial de Accesos</h1>
           <p className="text-slate-500 font-medium mt-1">Monitoreo en tiempo real de entradas y salidas de flota.</p>
         </div>
-        <button className="bg-violet-800 hover:bg-violet-900 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-all duration-300 active:scale-95">
+
+        <button onClick={() => router.push('/dashboard/accesos/nuevo')}
+        className="bg-violet-800 hover:bg-violet-900 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-all duration-300 active:scale-95">
           <span className="material-symbols-outlined text-lg">add</span>
-          Registro Manual
+            Registro Manual
         </button>
       </div>
 
