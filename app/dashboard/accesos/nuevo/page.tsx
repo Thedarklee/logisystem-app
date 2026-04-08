@@ -15,25 +15,16 @@ export default function RegistroManualPage() {
   });
 
   // --- FUNCIONES DE VALIDACIÓN ---
-  const validarRutChileno = (rut: string) => {
+const validarRutChileno = (rut: string) => {
     if (!rut) return false;
-    // Limpia puntos y espacios (dejamos el guion)
+    // Limpia puntos y espacios
     const valor = rut.replace(/\./g, '').replace(/\s/g, '');
     
-    // Verifica que tenga el guion y el formato correcto
-    if (!/^[0-9]+-[0-9kK]{1}$/.test(valor)) return false; 
-    
-    const [numero, digitoVerificador] = valor.split('-');
-    let rutNum = parseInt(numero, 10);
-    let m = 0, s = 1;
-    for (; rutNum; rutNum = Math.floor(rutNum / 10)) {
-      s = (s + rutNum % 10 * (9 - m++ % 6)) % 11;
-    }
-    const dvEsperado = s ? (s - 1).toString() : 'K';
-    return dvEsperado === digitoVerificador.toUpperCase();
+    // Solo verifica el FORMATO: (números) seguido de (-) seguido de (1 número o K)
+    // No hace el cálculo matemático del Módulo 11.
+    return /^[0-9]+-[0-9kK]{1}$/.test(valor); 
   };
-
-  const validarPatenteChilena = (patente: string) => {
+    const validarPatenteChilena = (patente: string) => {
     if (!patente) return false;
     const valor = patente.replace(/-/g, '').replace(/\s/g, '').toUpperCase();
     return /^([A-Z]{2}[0-9]{4}|[A-Z]{4}[0-9]{2})$/.test(valor);
