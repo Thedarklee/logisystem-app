@@ -1,15 +1,15 @@
 import mongoose, { Schema, models } from 'mongoose';
 
-const usuarioSchema = new Schema({
-  nombre: { type: String, required: true },
-  rut: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  cargo: { type: String, required: true },
-  isActivo: { type: Boolean, default: true },
-  tarjetaId: { type: Schema.Types.ObjectId, ref: 'Tarjeta' },
-  creadoEn: { type: Date, default: Date.now }
+const tarjetaSchema = new Schema({
+  codigoRFID: { type: String, required: true, unique: true },
+  estado: { 
+    type: String, 
+    enum: ['DISPONIBLE', 'ASIGNADA', 'EXTRAVIADA'], 
+    default: 'DISPONIBLE' 
+  },
+  tipo: { type: String, default: 'CONDUCTOR' },
+  ultimoUso: { type: Date }
 });
 
-const Usuario = models.Usuario || mongoose.model('Usuario', usuarioSchema);
-export default Usuario;
+const Tarjeta = models.Tarjeta || mongoose.model('Tarjeta', tarjetaSchema);
+export default Tarjeta;
