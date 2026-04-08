@@ -1,0 +1,42 @@
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname(); // Para saber en qué página estamos y pintar el menú
+
+  return (
+    <div className="bg-[#f7f9fb] text-[#191c1e] min-h-screen flex">
+      {/* SIDEBAR */}
+      <aside className="h-screen w-64 fixed left-0 top-0 bg-white/80 backdrop-blur-xl shadow-xl flex flex-col py-8 z-50">
+        <div className="px-6 mb-10">
+          <h1 className="text-2xl font-bold tracking-tighter text-violet-900 font-headline">LogiSystem</h1>
+          <p className="text-xs font-medium tracking-tight text-slate-500">Global Command</p>
+        </div>
+        <nav className="flex-1 space-y-1">
+          <Link href="/dashboard" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
+            <span className="material-symbols-outlined">dashboard</span> Dashboard
+          </Link>
+          <Link href="/dashboard/envios" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/envios' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
+            <span className="material-symbols-outlined">inventory_2</span> Gestión de Envíos
+          </Link>
+          <Link href="/dashboard/accesos" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/accesos' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
+            <span className="material-symbols-outlined">history_edu</span> Accesos
+          </Link>
+        </nav>
+      </aside>
+
+      {/* CONTENIDO PRINCIPAL (El children cambia según la ruta) */}
+      <main className="flex-1 ml-64 min-h-screen flex flex-col relative overflow-x-hidden">
+        {/* Aquí iría la barra superior (TopNavBar) resumida */}
+        <header className="w-full h-16 sticky top-0 z-40 flex justify-end items-center px-8 bg-transparent">
+             <span className="material-symbols-outlined text-slate-600 mr-4">notifications</span>
+             <div className="w-8 h-8 rounded-full bg-violet-200"></div>
+        </header>
+        
+        {/* Aquí se inyectan las páginas internas */}
+        {children} 
+      </main>
+    </div>
+  );
+}
