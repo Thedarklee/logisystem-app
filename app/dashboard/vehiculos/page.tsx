@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 
 export default function VehiculosPage() {
-  const [vehiculos, setVehiculos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
+  const [vehiculos, setVehiculos] = useState<any[]>([]); // <--- Agregamos <any[]>
+const [usuarios, setUsuarios] = useState<any[]>([]);   // <--- Agregamos <any[]>
   const [formData, setFormData] = useState({ 
     patente: "", 
     marca: "",    // Agregado
