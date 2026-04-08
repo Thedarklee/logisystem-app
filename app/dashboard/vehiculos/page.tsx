@@ -21,7 +21,8 @@ const [usuarios, setUsuarios] = useState<any[]>([]);   // <--- Agregamos <any[]>
         const uData = await resU.json();
         
         // Filtramos para que solo salgan los usuarios que son CONDUCTORES en el select
-        setUsuarios(Array.isArray(uData) ? uData.filter((u: any) => u.cargo === 'CONDUCTOR') : []);
+        // Como la API ya nos manda solo a los conductores, los guardamos directo
+        setUsuarios(Array.isArray(uData) ? uData : []);
         setVehiculos(Array.isArray(vData) ? vData : []);
       } catch (err) {
         console.error("Error al cargar datos", err);
