@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     // 5. ¡Todo en orden! Registramos el acceso automáticamente
     await LecturaAcceso.create({
       tipoMovimiento: tipoMovimiento || 'ENTRADA', // Por defecto ENTRADA si el Arduino no lo manda
-      metodo: 'RFID',
+      metodo: 'AUTOMATICO',
       estado: 'EXITOSO',
       conductor: {
         usuarioId: conductor._id,
