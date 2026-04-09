@@ -122,7 +122,6 @@ const [usuarios, setUsuarios] = useState<any[]>([]);   // <--- Agregamos <any[]>
                 <tr className="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
                   <th className="px-6 py-4">Vehículo</th>
                   <th className="px-6 py-4">Tara</th>
-                  <th className="px-6 py-4">Responsable</th>
                   <th className="px-6 py-4">Estado</th>
                 </tr>
               </thead>
