@@ -1,8 +1,10 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import LecturaAcceso from '@/models/LecturaAcceso';
 import Usuario from '@/models/Usuario';
 import Vehiculo from '@/models/Vehiculo';
+import Envio from '@/models/Envio'; // Importamos el cerebro logístico
 
 export async function POST(req: Request) {
   try {
@@ -14,29 +16,74 @@ export async function POST(req: Request) {
     }
 
     // 1. Buscamos si existe el conductor por RUT
-    const conductor = await Usuario.findOne({ rut: rut });
+    const conductor = await Usuario.findOne({ rut: rut.trim() });
+    if (!conductor) {
+      return NextResponse.json({ error: "Conductor no registrado en el sistema" }, { status: 404 });
+    }
     
     // 2. Buscamos si existe el vehículo por Patente
-    const vehiculo = await Vehiculo.findOne({ patente: patente });
+    const vehiculo = await Vehiculo.findOne({ patente: patente.toUpperCase().trim() });
+    if (!vehiculo) {
+      return NextResponse.json({ error: "Vehículo no registrado en la flota" }, { status: 404 });
+    }
 
-    // 3. Registramos el acceso (incluso si no están en la BD, se registra manualmente)
-    const nuevoRegistro = await LecturaAcceso.create({
-      tipoMovimiento,
-      metodo: 'MANUAL', // Indicamos que fue por teclado, no por RFID
-      estado: conductor && vehiculo ? 'EXITOSO' : 'ALERTA', // Alerta si entró alguien no registrado
-      conductor: {
-        usuarioId: conductor ? conductor._id : null,
-        nombre: conductor ? conductor.nombre : `Desconocido (RUT: ${rut})`
-      },
-      vehiculo: {
-        vehiculoId: vehiculo ? vehiculo._id : null,
-        patente: patente
-      }
+    // ----------------------------------------------------------------------
+    // 🧠 LA NUEVA REGLA: Bloqueo por falta de Envío (Igual que el RFID)
+    // ----------------------------------------------------------------------
+    const envioActivo = await Envio.findOne({
+      'recursos.conductorId': conductor._id,
+      estado: { $in: ['PROGRAMADO', 'EN_RUTA'] }
     });
 
-    return NextResponse.json({ mensaje: "Registro manual guardado" }, { status: 201 });
+    if (!envioActivo) {
+      return NextResponse.json({ 
+        error: "Acceso denegado: Este conductor no tiene un envío activo para el día de hoy." 
+      }, { status: 403 });
+    }
+
+    // 🕵️‍♀️ BONUS DE SEGURIDAD: ¿El camión que ve el guardia es el correcto?
+    if (envioActivo.recursos.vehiculoId.toString() !== vehiculo._id.toString()) {
+      return NextResponse.json({ 
+        error: `Alerta de seguridad: El conductor tiene un envío asignado, pero debe usar el camión patente ${envioActivo.recursos.patente}, no el ${vehiculo.patente}.` 
+      }, { status: 403 });
+    }
+
+    // 3. Todo está en regla. Guardamos el registro manual
+    const nuevoRegistro = await LecturaAcceso.create({
+      tipoMovimiento,
+      metodo: 'MANUAL', 
+      estado: 'EXITOSO', 
+      conductor: {
+        usuarioId: conductor._id,
+        nombre: conductor.nombre
+      },
+      vehiculo: {
+        vehiculoId: vehiculo._id,
+        patente: vehiculo.patente
+      },
+      observaciones: `Registro manual (Guardia). Asociado al envío: ${envioActivo.numeroEnvio}`
+    });
+
+    // ----------------------------------------------------------------------
+    // 🚀 ACTUALIZACIÓN AUTOMÁTICA DEL ENVÍO
+    // ----------------------------------------------------------------------
+    if (tipoMovimiento === 'SALIDA' && envioActivo.estado === 'PROGRAMADO') {
+      envioActivo.estado = 'EN_RUTA';
+      envioActivo.logistica.fechaSalidaEstimada = new Date(); 
+      await envioActivo.save();
+    } else if (tipoMovimiento === 'ENTRADA' && envioActivo.estado === 'EN_RUTA') {
+      envioActivo.estado = 'FINALIZADO';
+      envioActivo.logistica.fechaCierreReal = new Date(); 
+      await envioActivo.save();
+    }
+
+    return NextResponse.json({ 
+      mensaje: "Acceso autorizado manualmente",
+      envioAsociado: envioActivo.numeroEnvio 
+    }, { status: 201 });
 
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Error en acceso manual:", error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
