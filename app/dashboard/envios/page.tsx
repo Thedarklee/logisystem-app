@@ -19,7 +19,6 @@ export default function EnviosPage() {
     fechaSalida: "",
     fechaLlegada: "",
     estado: "ABIERTO",
-    // Campos obligatorios de Carga
     tipoCarga: "",
     pesoKg: ""
   });
@@ -38,9 +37,9 @@ export default function EnviosPage() {
         const vData = await resV.json();
         const eData = await resE.json();
 
-        // FILTRO ESTRICTO: Solo usuarios que tengan el cargo "CONDUCTOR" y estén activos
+        // FILTRO ESTRICTO Y SEGURO: Solo usuarios con cargo CONDUCTOR y activos
         const soloConductores = Array.isArray(uData) 
-          ? uData.filter((u: any) => u.cargo === 'CONDUCTOR' && u.isActivo !== false) 
+          ? uData.filter((u: any) => u.cargo && u.cargo.toUpperCase() === 'CONDUCTOR' && u.isActivo !== false) 
           : [];
         setConductores(soloConductores);
 
@@ -74,10 +73,8 @@ export default function EnviosPage() {
 
       if (res.ok) {
         setStatus({ type: 'success', msg: "¡Envío programado correctamente!" });
-        // Limpiar formulario pero dejar el estado por defecto
         setFormData({ numeroEnvio: "", conductorId: "", vehiculoId: "", origen: "", destino: "", fechaSalida: "", fechaLlegada: "", estado: "ABIERTO", tipoCarga: "", pesoKg: "" });
         
-        // Refrescar tabla
         const refresh = await fetch('/api/envios');
         setEnvios(await refresh.json());
       } else {
@@ -133,13 +130,22 @@ export default function EnviosPage() {
                 </select>
               </div>
 
-              {/* Conductor */}
+              {/* Conductor Asignado - ¡AQUÍ ESTÁ EL CAMBIO! */}
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Conductor Asignado</label>
-                <select required value={formData.conductorId} onChange={e => setFormData({...formData, conductorId: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                  Responsable (Solo Conductores)
+                </label>
+                <select 
+                  required 
+                  value={formData.conductorId} 
+                  onChange={e => setFormData({...formData, conductorId: e.target.value})} 
+                  className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700"
+                >
                   <option value="">Seleccione un conductor...</option>
-                  {conductores.map(c => (
-                    <option key={c._id} value={c._id}>{c.nombre} ({c.rut})</option>
+                  {conductores.map((c: any) => (
+                    <option key={c._id} value={c._id}>
+                      {c.nombre} - RUT: {c.rut}
+                    </option>
                   ))}
                 </select>
               </div>
