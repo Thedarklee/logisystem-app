@@ -3,31 +3,46 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Tarjeta from '@/models/Tarjeta';
 import Usuario from '@/models/Usuario';
-import Vehiculo from '@/models/Vehiculo';
 import LecturaAcceso from '@/models/LecturaAcceso';
-import Envio from '@/models/Envio'; // IMPORTANTE: Agregamos el modelo de Envío
+import Envio from '@/models/Envio';
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
     const body = await req.json();
+    
+    // El Arduino SOLO envía el UID, no envía RUT ni patente
     const { uid } = body;
 
-    if (!uid) return NextResponse.json({ error: "UID no proporcionado" }, { status: 400 });
+    // 1. Validación básica
+    if (!uid) {
+      return NextResponse.json({ error: "UID no proporcionado" }, { status: 400 });
+    }
+
     const uidLimpio = uid.toUpperCase().trim();
 
-    // 1 y 2. Buscamos Tarjeta y Verificamos Estado
+    // 2. Buscamos la Tarjeta y verificamos su estado
     const tarjeta = await Tarjeta.findOne({ uid: uidLimpio });
-    if (!tarjeta) return NextResponse.json({ error: "Tarjeta no registrada" }, { status: 404 });
-    if (tarjeta.estado !== 'ACTIVA') return NextResponse.json({ error: `Tarjeta ${tarjeta.estado}` }, { status: 403 });
+    if (!tarjeta) {
+      return NextResponse.json({ error: "Tarjeta no registrada en el sistema" }, { status: 404 });
+    }
 
-    // 3. Buscamos al Conductor
-    if (!tarjeta.usuarioAsignado) return NextResponse.json({ error: "Tarjeta sin conductor" }, { status: 403 });
+    if (tarjeta.estado !== 'ACTIVA') {
+      return NextResponse.json({ error: `Acceso denegado: Tarjeta ${tarjeta.estado}` }, { status: 403 });
+    }
+
+    // 3. Buscamos a quién le pertenece (Conductor)
+    if (!tarjeta.usuarioAsignado) {
+      return NextResponse.json({ error: "Tarjeta sin conductor asignado" }, { status: 403 });
+    }
     const conductor = await Usuario.findById(tarjeta.usuarioAsignado);
+
+    if (!conductor) {
+       return NextResponse.json({ error: "El conductor asignado a la tarjeta no existe" }, { status: 404 });
+    }
 
     // ----------------------------------------------------------------------
     // 🧠 EL NUEVO CEREBRO: Buscamos el Vehículo a través del Envío
-    // Buscamos si el conductor tiene un envío 'PROGRAMADO' (para salir) o 'EN_RUTA' (para volver)
     // ----------------------------------------------------------------------
     const envioActivo = await Envio.findOne({
       'recursos.conductorId': conductor._id,
@@ -36,7 +51,7 @@ export async function POST(req: Request) {
 
     if (!envioActivo) {
       return NextResponse.json({ 
-        error: "Acceso denegado: El conductor no tiene una ruta asignada para hoy." 
+        error: "Acceso denegado: El conductor no tiene una ruta asignada y en progreso para hoy." 
       }, { status: 403 });
     }
 
@@ -47,17 +62,27 @@ export async function POST(req: Request) {
     // ----------------------------------------------------------------------
     // Lógica de deducción de Entrada/Salida
     // ----------------------------------------------------------------------
-    const ultimoMovimiento = await LecturaAcceso.findOne({ 'vehiculo.vehiculoId': vehiculoId }).sort({ fechaHora: -1 });
-    const movimientoDeducido = (ultimoMovimiento && ultimoMovimiento.tipoMovimiento === 'ENTRADA') ? 'SALIDA' : 'ENTRADA';
+    const ultimoMovimiento = await LecturaAcceso.findOne({ 'vehiculo.vehiculoId': vehiculoId })
+                                                .sort({ fechaHora: -1 });
+
+    const movimientoDeducido = (ultimoMovimiento && ultimoMovimiento.tipoMovimiento === 'ENTRADA') 
+                               ? 'SALIDA' 
+                               : 'ENTRADA';
 
     // 4. Registramos el Acceso con los datos cruzados
     await LecturaAcceso.create({
       tipoMovimiento: movimientoDeducido,
-      metodo: 'AUTOMATICO',
+      metodo: 'AUTOMATICO', // Indicamos que fue por RFID
       estado: 'EXITOSO',
-      conductor: { usuarioId: conductor._id, nombre: conductor.nombre },
-      vehiculo: { vehiculoId: vehiculoId, patente: patente },
-      observaciones: `Asociado al envío ${envioActivo.numeroEnvio}`
+      conductor: {
+        usuarioId: conductor._id,
+        nombre: conductor.nombre
+      },
+      vehiculo: {
+        vehiculoId: vehiculoId,
+        patente: patente
+      },
+      observaciones: `Asociado automáticamente al envío: ${envioActivo.numeroEnvio}`
     });
 
     // ----------------------------------------------------------------------
@@ -65,14 +90,15 @@ export async function POST(req: Request) {
     // ----------------------------------------------------------------------
     if (movimientoDeducido === 'SALIDA' && envioActivo.estado === 'PROGRAMADO') {
       envioActivo.estado = 'EN_RUTA';
-      envioActivo.logistica.fechaSalidaReal = new Date(); // Opcional
+      envioActivo.logistica.fechaSalidaEstimada = new Date(); 
       await envioActivo.save();
     } else if (movimientoDeducido === 'ENTRADA' && envioActivo.estado === 'EN_RUTA') {
       envioActivo.estado = 'FINALIZADO';
-      envioActivo.logistica.fechaCierreReal = new Date();
+      envioActivo.logistica.fechaCierreReal = new Date(); 
       await envioActivo.save();
     }
 
+    // 5. Le respondemos al ESP32 que todo salió bien (para que prenda la luz verde)
     return NextResponse.json({ 
       mensaje: "Acceso autorizado", 
       movimiento: movimientoDeducido,
