@@ -24,6 +24,7 @@ export default function EnviosPage() {
   });
 
   // --- CARGAR DATOS ---
+ // --- CARGAR DATOS (Fórmula directa estilo Tarjetas RFID) ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -37,18 +38,13 @@ export default function EnviosPage() {
         const vData = await resV.json();
         const eData = await resE.json();
 
-        // FILTRO ESTRICTO Y SEGURO: Solo usuarios con cargo CONDUCTOR y activos
-        const soloConductores = Array.isArray(uData) 
-          ? uData.filter((u: any) => u.cargo && u.cargo.toUpperCase() === 'CONDUCTOR' && u.isActivo !== false) 
-          : [];
-        setConductores(soloConductores);
+        // 1. Cargamos TODOS los usuarios sin filtrar el cargo, igual que en Tarjetas
+        setConductores(Array.isArray(uData) ? uData : []);
 
-        // FILTRO DE VEHÍCULOS: Solo activos
-        const soloVehiculos = Array.isArray(vData) 
-          ? vData.filter((v: any) => v.isActivo !== false) 
-          : [];
-        setVehiculos(soloVehiculos);
+        // 2. Cargamos TODOS los vehículos
+        setVehiculos(Array.isArray(vData) ? vData : []);
 
+        // 3. Cargamos los envíos
         setEnvios(Array.isArray(eData) ? eData : []);
       } catch (err) {
         console.error("Error cargando datos base", err);
