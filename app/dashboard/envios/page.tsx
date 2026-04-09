@@ -24,7 +24,7 @@ export default function EnviosPage() {
     pesoKg: ""
   });
 
-  // --- CARGAR DATOS (Conductores, Vehículos y Envíos) ---
+  // --- CARGAR DATOS ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -38,9 +38,18 @@ export default function EnviosPage() {
         const vData = await resV.json();
         const eData = await resE.json();
 
-        // FILTROS: Solo conductores activos, y solo vehículos activos
-        setConductores(Array.isArray(uData) ? uData.filter(u => u.cargo === 'CONDUCTOR' && u.isActivo !== false) : []);
-        setVehiculos(Array.isArray(vData) ? vData.filter(v => v.isActivo !== false) : []);
+        // FILTRO ESTRICTO: Solo usuarios que tengan el cargo "CONDUCTOR" y estén activos
+        const soloConductores = Array.isArray(uData) 
+          ? uData.filter((u: any) => u.cargo === 'CONDUCTOR' && u.isActivo !== false) 
+          : [];
+        setConductores(soloConductores);
+
+        // FILTRO DE VEHÍCULOS: Solo activos
+        const soloVehiculos = Array.isArray(vData) 
+          ? vData.filter((v: any) => v.isActivo !== false) 
+          : [];
+        setVehiculos(soloVehiculos);
+
         setEnvios(Array.isArray(eData) ? eData : []);
       } catch (err) {
         console.error("Error cargando datos base", err);
