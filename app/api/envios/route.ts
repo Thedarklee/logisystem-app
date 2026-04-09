@@ -1,46 +1,72 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Envio from '@/models/Envio';
+import Vehiculo from '@/models/Vehiculo';
+import Usuario from '@/models/Usuario'; // Para el populate
 
-// 1. MÉTODO POST: Para crear un nuevo envío (HU06)
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    
-    // Obtenemos los datos que envía el frontend
     const body = await req.json();
+    
+    const { numeroEnvio, origen, destino, fechaSalida, fechaLlegada, tipoCarga, pesoKg, conductorId, vehiculoId, estado } = body;
 
-    // Mongoose se encarga de validar la estructura automáticamente
-    // usando el modelo Envio.ts que creamos antes.
-    const nuevoEnvio = await Envio.create(body);
+    // 1. Validaciones básicas
+    if (!numeroEnvio || !origen || !destino || !tipoCarga || !pesoKg) {
+      return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
+    }
 
-    return NextResponse.json({ 
-      mensaje: "Envío creado exitosamente", 
-      envio: nuevoEnvio 
-    }, { status: 201 });
+    // 2. Buscamos el vehículo para copiar su patente (como lo pide tu modelo)
+    let patenteVehiculo = null;
+    if (vehiculoId) {
+      const vehiculo = await Vehiculo.findById(vehiculoId);
+      if (vehiculo) patenteVehiculo = vehiculo.patente;
+    }
+
+    // 3. Creamos el Envío estructurado como dicta tu Modelo
+    const nuevoEnvio = await Envio.create({
+      numeroEnvio: numeroEnvio.toUpperCase(),
+      estado: estado || 'ABIERTO',
+      logistica: {
+        origen,
+        destino,
+        fechaSalidaEstimada: fechaSalida || null,
+        fechaLlegadaEstimada: fechaLlegada || null
+      },
+      carga: {
+        tipo: tipoCarga,
+        pesoKg: Number(pesoKg)
+      },
+      recursos: {
+        conductorId: conductorId || null,
+        vehiculoId: vehiculoId || null,
+        patente: patenteVehiculo
+      }
+    });
+
+    return NextResponse.json({ mensaje: "Envío programado con éxito", id: nuevoEnvio._id }, { status: 201 });
 
   } catch (error: any) {
-    console.error("Error al crear el envío:", error);
-    // Si Mongoose rechaza el guardado (ej. falta un campo obligatorio), devolvemos error 400
-    return NextResponse.json({ 
-      error: "No se pudo crear el envío, revisa los datos", 
-      detalle: error.message 
-    }, { status: 400 });
+    // Si el numeroEnvio ya existe, MongoDB lanza el error 11000
+    if (error.code === 11000) {
+      return NextResponse.json({ error: "Este Número de Envío ya existe" }, { status: 400 });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// 2. MÉTODO GET: Para listar los envíos en la tabla del Dashboard
 export async function GET() {
   try {
     await dbConnect();
-    
-    // Buscamos los envíos ordenados por los más recientes primero
-    const envios = await Envio.find().sort({ fechaCreacion: -1 }).limit(50);
+    // Traemos los envíos y "poblamos" los datos del conductor para ver su nombre en la tabla
+    const envios = await Envio.find()
+      .populate('recursos.conductorId', 'nombre')
+      .sort({ fechaCreacion: -1 })
+      .lean();
 
-    return NextResponse.json(envios, { status: 200 });
-    
-  } catch (error) {
-    console.error("Error al obtener envíos:", error);
-    return NextResponse.json({ error: "Error de servidor al obtener la lista de envíos" }, { status: 500 });
+    return NextResponse.json(envios);
+  } catch (error: any) {
+    return NextResponse.json({ error: "Error al cargar envíos" }, { status: 500 });
   }
 }
