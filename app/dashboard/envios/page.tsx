@@ -219,7 +219,7 @@ export default function EnviosPage() {
         </div>
       </section>
 
-      {/* Tabla Dinámica de Envíos */}
+{/* Tabla Dinámica de Envíos */}
       <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold font-headline">Registro de Operaciones</h3>
@@ -230,13 +230,15 @@ export default function EnviosPage() {
               <tr className="text-slate-400 uppercase text-[10px] font-black tracking-[0.2em]">
                 <th className="px-6 py-2">ID Envío</th>
                 <th className="px-6 py-2">Ruta (Origen &gt; Destino)</th>
+                {/* NUEVA COLUMNA: CONDUCTOR */}
+                <th className="px-6 py-2">Conductor</th>
                 <th className="px-6 py-2">Patente</th>
                 <th className="px-6 py-2">Estado</th>
               </tr>
             </thead>
             <tbody className="text-sm">
               {envios.length === 0 ? (
-                <tr><td colSpan={4} className="text-center py-6 text-slate-400 italic">No hay envíos registrados.</td></tr>
+                <tr><td colSpan={5} className="text-center py-6 text-slate-400 italic">No hay envíos registrados.</td></tr>
               ) : envios.map((envio) => (
                 <tr key={envio._id} className="bg-slate-50 group hover:shadow-md transition-shadow">
                   <td className="px-6 py-5 rounded-l-2xl font-black font-mono text-violet-900">
@@ -249,6 +251,13 @@ export default function EnviosPage() {
                       <span className="font-semibold">{envio.logistica?.destino}</span>
                     </div>
                   </td>
+                  
+                  {/* NUEVA CELDA: DIBUJAMOS EL NOMBRE DEL CONDUCTOR */}
+                  <td className="px-6 py-5 font-bold text-slate-700 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-slate-400 text-sm">person</span>
+                    {envio.recursos?.conductorId?.nombre || 'Sin asignar'}
+                  </td>
+
                   <td className="px-6 py-5 font-mono font-bold text-slate-600">
                     {envio.recursos?.patente || 'N/A'}
                   </td>
