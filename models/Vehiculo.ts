@@ -12,7 +12,6 @@ const vehiculoSchema = new Schema({
   conductorAsignado: { 
     type: Schema.Types.ObjectId, 
     ref: 'Usuario', // Debe ser el mismo nombre que usaste en mongoose.model('Usuario', ...)
-    required: true 
   }
 }, {
   timestamps: true // Esto te ayudará a saber cuándo se registró el vehículo
