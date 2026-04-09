@@ -9,26 +9,25 @@ export async function POST(req: Request) {
     await dbConnect();
     const body = await req.json();
     
-    // 1. Extraemos TODOS los campos que envía el frontend
-    const { patente, marca, modelo, pesoTaraKg, conductorId } = body;
+    // 1. Ya no extraemos conductorId
+    const { patente, marca, modelo, pesoTaraKg } = body;
 
-    // 2. Validamos que no falte nada importante
-    if (!patente || !conductorId || !marca || !pesoTaraKg) {
+    // 2. Ya no validamos el conductorId
+    if (!patente || !marca || !pesoTaraKg || !modelo) {
       return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
     }
 
-    // 3. Creamos el vehículo con toda su información
+    // 3. Creamos el vehículo "soltero"
     const nuevoVehiculo = await Vehiculo.create({
       patente: patente.toUpperCase().trim(),
-      marca,          // AGREGADO
+      marca,          
       modelo,
-      pesoTaraKg,     // AGREGADO
-      conductorAsignado: conductorId,
+      pesoTaraKg,     
       isActivo: true
     });
 
     return NextResponse.json({ 
-      mensaje: "Vehículo registrado y asignado", 
+      mensaje: "Vehículo registrado en la flota", 
       id: nuevoVehiculo._id 
     }, { status: 201 });
     

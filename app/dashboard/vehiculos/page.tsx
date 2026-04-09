@@ -108,18 +108,7 @@ const [usuarios, setUsuarios] = useState<any[]>([]);   // <--- Agregamos <any[]>
             required
           />
 
-          <select 
-            className="w-full p-3 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-violet-800 cursor-pointer"
-            value={formData.conductorId}
-            onChange={e => setFormData({...formData, conductorId: e.target.value})}
-            required
-          >
-            <option value="">Seleccionar Conductor...</option>
-            {usuarios.map((u: any) => (
-              <option key={u._id} value={u._id}>{u.nombre}</option>
-            ))}
-          </select>
-
+       
           <button className="w-full bg-violet-800 text-white py-4 rounded-xl font-bold hover:bg-violet-900 transition-all shadow-lg shadow-violet-800/20 active:scale-95">
             GUARDAR EN FLOTA
           </button>
