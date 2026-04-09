@@ -29,16 +29,24 @@ export async function POST(req: Request) {
     const isMatch = await bcrypt.compare(password, usuario.password);
 
     if (!isMatch) {
-      // ESTO NOS DIRÁ SI HAY DIFERENCIA ENTRE LO QUE ESCRIBES Y LO QUE HAY EN BD
       return NextResponse.json({ 
         error: `Clave incorrecta. Recibí: "${password}" (largo: ${password.length}). En BD el hash empieza con: ${usuario.password.substring(0, 10)}` 
       }, { status: 401 });
     }
 
+    // 4. Verificar si está activo
     if (!usuario.isActivo) {
        return NextResponse.json({ error: "Usuario inactivo en la base de datos" }, { status: 403 });
     }
 
+    // 🚨 5. EL NUEVO GUARDIA DE SEGURIDAD VIP 🚨
+    if (usuario.cargo === 'CONDUCTOR') {
+      return NextResponse.json({ 
+        error: "Acceso denegado: Plataforma exclusiva para Administración y Operadores." 
+      }, { status: 403 });
+    }
+
+    // 6. Login exitoso (Solo pasa si es ADMIN u OPERADOR)
     const userData = {
       id: usuario._id,
       nombre: usuario.nombre,
