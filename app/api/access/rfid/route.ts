@@ -42,10 +42,21 @@ export async function POST(req: Request) {
     if (!vehiculo) {
       return NextResponse.json({ error: "Conductor sin vehículo asignado" }, { status: 403 });
     }
+    
 
-    // 5. ¡Todo en orden! Registramos el acceso automáticamente
+    // EL CEREBRO: Deducción automática de Entrada/Salida
+    // Buscamos el último movimiento de este vehículo ordenado por fecha (el más reciente primero)
+    const ultimoMovimiento = await LecturaAcceso.findOne({ 'vehiculo.vehiculoId': vehiculo._id })
+                                                .sort({ fechaHora: -1 });
+
+    // Si el último movimiento fue ENTRADA, entonces ahora debe ser SALIDA. Si no, es ENTRADA.
+    const movimientoDeducido = (ultimoMovimiento && ultimoMovimiento.tipoMovimiento === 'ENTRADA') 
+                               ? 'SALIDA' 
+                               : 'ENTRADA';
+
+    // 5. ¡Todo en orden! Registramos el acceso automáticamente usando nuestra deducción
     await LecturaAcceso.create({
-      tipoMovimiento: tipoMovimiento || 'ENTRADA', // Por defecto ENTRADA si el Arduino no lo manda
+      tipoMovimiento: movimientoDeducido, 
       metodo: 'AUTOMATICO',
       estado: 'EXITOSO',
       conductor: {
@@ -61,6 +72,7 @@ export async function POST(req: Request) {
     // 6. Le respondemos al ESP32 que todo salió bien (para que prenda la luz verde)
     return NextResponse.json({ 
       mensaje: "Acceso autorizado", 
+      movimiento: movimientoDeducido,
       conductor: conductor.nombre 
     }, { status: 201 });
 
