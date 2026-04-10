@@ -7,10 +7,9 @@ export default function GestionUsuariosPage() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
   
-  // Estado para controlar la ventana flotante de edición
   const [usuarioEditando, setUsuarioEditando] = useState<any | null>(null);
 
-  // Cargar usuarios al iniciar
+  // Cargar usuarios
   const fetchUsuarios = async () => {
     try {
       const res = await fetch('/api/users');
@@ -26,7 +25,7 @@ export default function GestionUsuariosPage() {
     fetchUsuarios();
   }, []);
 
-  // Función para ELIMINAR
+  // Eliminar
   const handleDelete = async (id: string, nombre: string) => {
     if (!window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${nombre}?`)) return;
     
@@ -34,19 +33,17 @@ export default function GestionUsuariosPage() {
       const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setStatus({ type: 'success', msg: `Usuario ${nombre} eliminado.` });
-        fetchUsuarios(); // Recargar la tabla
+        fetchUsuarios(); 
       } else {
         setStatus({ type: 'error', msg: "Error al eliminar usuario." });
       }
     } catch (error) {
       setStatus({ type: 'error', msg: "Error de conexión." });
     }
-    
-    // Ocultar mensaje después de 3 segundos
     setTimeout(() => setStatus(null), 3000);
   };
 
-  // Función para GUARDAR CAMBIOS (Modificar)
+  // Guardar Cambios (Modificar)
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!usuarioEditando) return;
@@ -60,21 +57,29 @@ export default function GestionUsuariosPage() {
 
       if (res.ok) {
         setStatus({ type: 'success', msg: "¡Usuario actualizado correctamente!" });
-        setUsuarioEditando(null); // Cerrar el modal
-        fetchUsuarios(); // Recargar la tabla
+        setUsuarioEditando(null); 
+        fetchUsuarios(); 
       } else {
         setStatus({ type: 'error', msg: "Error al actualizar los datos." });
       }
     } catch (error) {
       setStatus({ type: 'error', msg: "Error de conexión." });
     }
-
     setTimeout(() => setStatus(null), 3000);
+  };
+
+  // Abrir modal asegurando que los campos no sean "undefined"
+  const abrirModalEdicion = (user: any) => {
+    setUsuarioEditando({
+      ...user,
+      email: user.email || '',
+      cargo: user.cargo || 'CONDUCTOR', // Valor por defecto si no tiene
+      isActivo: user.isActivo !== false // Si es undefined o true, será true. Solo false será false.
+    });
   };
 
   return (
     <div className="px-10 py-8 space-y-8 relative">
-      {/* Encabezado */}
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-violet-900 font-headline uppercase">Gestión de Personal</h2>
@@ -82,14 +87,12 @@ export default function GestionUsuariosPage() {
         </div>
       </div>
 
-      {/* Alerta de Éxito/Error */}
       {status && (
         <div className={`p-4 rounded-xl text-sm font-bold shadow-sm ${status.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
           {status.msg}
         </div>
       )}
 
-      {/* Tabla de Usuarios */}
       <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
         <div className="overflow-x-auto">
           {loading ? (
@@ -114,14 +117,23 @@ export default function GestionUsuariosPage() {
                       <p className="font-bold text-violet-900">{user.nombre}</p>
                       <p className="text-xs font-mono text-slate-500">RUT: {user.rut}</p>
                     </td>
-                    <td className="px-6 py-4 text-slate-600 font-medium">{user.email}</td>
-                    <td className="px-6 py-4">
-                      <span className="bg-violet-100 text-violet-800 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">
-                        {user.cargo}
-                      </span>
+                    <td className="px-6 py-4 text-slate-600 font-medium">
+                      {user.email || <span className="text-slate-400 italic">Sin registrar</span>}
                     </td>
                     <td className="px-6 py-4">
-                      {user.isActivo ? (
+                      {user.cargo ? (
+                        <span className="bg-violet-100 text-violet-800 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">
+                          {user.cargo}
+                        </span>
+                      ) : (
+                        <span className="bg-slate-200 text-slate-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">
+                          SIN ASIGNAR
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {/* Lógica mejorada: Si explícitamente es false es inactivo, de lo contrario activo */}
+                      {user.isActivo !== false ? (
                         <span className="flex items-center gap-1 text-emerald-600 font-bold text-xs"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Activo</span>
                       ) : (
                         <span className="flex items-center gap-1 text-red-500 font-bold text-xs"><div className="w-2 h-2 rounded-full bg-red-500"></div> Inactivo</span>
@@ -129,15 +141,13 @@ export default function GestionUsuariosPage() {
                     </td>
                     <td className="px-6 py-4 rounded-r-2xl text-right">
                       <div className="flex justify-end gap-2">
-                        {/* Botón Modificar */}
                         <button 
-                          onClick={() => setUsuarioEditando(user)}
+                          onClick={() => abrirModalEdicion(user)}
                           className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
                           title="Modificar Usuario"
                         >
                           <span className="material-symbols-outlined text-sm">edit</span>
                         </button>
-                        {/* Botón Eliminar */}
                         <button 
                           onClick={() => handleDelete(user._id, user.nombre)}
                           className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
@@ -155,7 +165,7 @@ export default function GestionUsuariosPage() {
         </div>
       </section>
 
-      {/* MODAL Flotante para Editar Usuario */}
+      {/* MODAL */}
       {usuarioEditando && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in-95 duration-200">

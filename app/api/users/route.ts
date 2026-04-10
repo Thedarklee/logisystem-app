@@ -51,18 +51,16 @@ export async function GET() {
   try {
     await dbConnect();
 
-    // Buscamos a los usuarios que tengan el cargo "CONDUCTOR"
-    // .select() nos permite traer solo la info necesaria para el dropdown
-    const conductores = await Usuario.find({ 
-      cargo: 'CONDUCTOR', 
-      isActivo: true 
-    }).select('nombre rut');
+    // 1. Quitamos los filtros para que traiga a TODOS (Admin, Operador, Conductor)
+    // 2. Quitamos el .select() para que traiga TODOS los campos (email, isActivo, etc.)
+    // 3. Agregamos .sort({ creadoEn: -1 }) para ver a los más nuevos primero
+    const todosLosUsuarios = await Usuario.find().sort({ creadoEn: -1 }).lean();
 
-    return NextResponse.json(conductores);
+    return NextResponse.json(todosLosUsuarios);
   } catch (error: any) {
-    console.error("Error al obtener conductores:", error);
+    console.error("Error al obtener usuarios:", error);
     return NextResponse.json(
-      { error: "Error al cargar la lista de conductores" }, 
+      { error: "Error al cargar la lista de usuarios" }, 
       { status: 500 }
     );
   }
