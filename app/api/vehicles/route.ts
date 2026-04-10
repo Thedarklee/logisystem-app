@@ -40,14 +40,10 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     await dbConnect();
-    
-    // .populate busca el ID y lo reemplaza por el objeto real del usuario
-    const vehiculos = await Vehiculo.find()
-      .populate('conductorAsignado', 'nombre') 
-      .lean(); 
-
+    // Traemos TODOS los vehículos sin importar si están activos o inactivos
+    const vehiculos = await Vehiculo.find().sort({ createdAt: -1 }).lean();
     return NextResponse.json(vehiculos);
-  } catch (error) {
-    return NextResponse.json({ error: "Error al cargar flota" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: "Error al cargar vehículos" }, { status: 500 });
   }
 }
