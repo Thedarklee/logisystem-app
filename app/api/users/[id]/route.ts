@@ -3,16 +3,22 @@ import dbConnect from '@/lib/mongodb';
 import Usuario from '@/models/Usuario';
 
 // ACTUALIZAR (Modificar) un usuario
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  req: Request, 
+  context: { params: Promise<{ id: string }> } // <-- Cambio 1: Ahora params es una Promesa
+) {
   try {
     await dbConnect();
     const body = await req.json();
     
+    // <-- Cambio 2: Esperamos (await) a que los parámetros estén listos
+    const { id } = await context.params;
+
     // Extraemos los datos que queremos permitir que se modifiquen
     const { nombre, rut, email, cargo, isActivo } = body;
 
     const usuarioActualizado = await Usuario.findByIdAndUpdate(
-      params.id,
+      id, // Usamos el ID extraído de la promesa
       { nombre, rut, email, cargo, isActivo },
       { new: true } // Esto devuelve el documento ya actualizado
     );
@@ -28,11 +34,17 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 }
 
 // ELIMINAR un usuario
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  req: Request, 
+  context: { params: Promise<{ id: string }> } // <-- Cambio 1: Ahora params es una Promesa
+) {
   try {
     await dbConnect();
     
-    const usuarioEliminado = await Usuario.findByIdAndDelete(params.id);
+    // <-- Cambio 2: Esperamos (await) a que los parámetros estén listos
+    const { id } = await context.params;
+
+    const usuarioEliminado = await Usuario.findByIdAndDelete(id);
 
     if (!usuarioEliminado) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
