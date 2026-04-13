@@ -46,7 +46,7 @@ export default function AccesosPage() {
           onClick={() => router.push('/dashboard/accesos/nuevo')}
           className="bg-violet-800 hover:bg-violet-900 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-all duration-300 active:scale-95"
         >
-          <span className="material-symbols-outlined text-lg">add</span>
+          <span className="material-symbols-outlined text-lg">Añadir</span>
           Registro Manual
         </button>
       </div>
@@ -113,7 +113,7 @@ export default function AccesosPage() {
                   <td className="px-8 py-6">
                     <span className="text-sm font-medium text-slate-600 flex items-center gap-2">
                       <span className="material-symbols-outlined text-sm text-violet-600">
-                        {acceso.metodo === 'RFID' ? 'sensors' : 'edit_note'}
+                        {acceso.metodo === 'RFID' ? 'sensors' : ''}
                       </span> 
                       {acceso.metodo}
                     </span>

@@ -15,35 +15,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <nav className="flex-1 space-y-1">
           <Link href="/dashboard" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
-            <span className="material-symbols-outlined">history</span> Historial
+            <span className="material-symbols-outlined">Historial</span> 
           </Link>
           
           <Link href="/dashboard/envios" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/envios' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
-            <span className="material-symbols-outlined">local_shipping</span> Gestión de Envíos
+            <span className="material-symbols-outlined">Gestion Envios</span>
           </Link>
           
           <Link href="/dashboard/accesos" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/accesos' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
-            <span className="material-symbols-outlined">gate</span> Accesos
+            <span className="material-symbols-outlined">Accesos</span> 
           </Link>
 
           {/* CRUD USUARIOS */}
           <Link href="/dashboard/usuarios" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/usuarios' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
-            <span className="material-symbols-outlined">group</span> Gestión Usuarios
+            <span className="material-symbols-outlined">Gestión Usuarios</span> 
           </Link>
 
           {/* CRUD VEHÍCULOS (Apuntando a la nueva vista de gestión) */}
           <Link href="/dashboard/vehiculos/gestion" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/vehiculos/gestion' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
-            <span className="material-symbols-outlined">minor_crash</span> Gestión Flota
+            <span className="material-symbols-outlined">Gestión Flota</span>
           </Link>
           
           <Link href="/dashboard/tarjetas" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/tarjetas' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
-            <span className="material-symbols-outlined">credit_card</span> RFID
+            <span className="material-symbols-outlined">Asignacion RFID</span> 
           </Link>
 
           <hr className="my-2 border-slate-100" />
 
           <Link href="/dashboard/usuarios/nuevo" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/usuarios/nuevo' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
-            <span className="material-symbols-outlined">person_add</span> Nuevo Usuario
+            <span className="material-symbols-outlined">Nuevo Usuario</span> 
           </Link>
         </nav>
       </aside>
@@ -52,7 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main className="flex-1 ml-64 min-h-screen flex flex-col relative overflow-x-hidden">
         {/* Aquí iría la barra superior (TopNavBar) resumida */}
         <header className="w-full h-16 sticky top-0 z-40 flex justify-end items-center px-8 bg-transparent">
-             <span className="material-symbols-outlined text-slate-600 mr-4">notifications</span>
+             <span className="material-symbols-outlined text-slate-600 mr-4">Notificaciones</span>
              <div className="w-8 h-8 rounded-full bg-violet-200"></div>
         </header>
         

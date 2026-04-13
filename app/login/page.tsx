@@ -102,7 +102,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-[#420093] text-white font-bold py-4 rounded-xl shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {loading ? "Consultando BD..." : "Iniciar Sesión"}
+                {loading ? "Cargando..." : "Iniciar Sesión"}
               </button>
             </div>
           </form>

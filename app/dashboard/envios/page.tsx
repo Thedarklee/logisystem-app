@@ -211,7 +211,7 @@ export default function EnviosPage() {
             <div className="relative z-10 space-y-4 mt-8">
               <div className="flex justify-between items-end">
                 <span className="text-5xl font-black font-headline">{envios.filter(e => e.estado === 'EN_RUTA').length}</span>
-                <span className="material-symbols-outlined text-4xl opacity-40">local_shipping</span>
+                <span className="material-symbols-outlined text-4xl opacity-40">Gestion de Envios</span>
               </div>
               <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 border-t border-white/10 pt-2">Vehículos en terreno</p>
             </div>
