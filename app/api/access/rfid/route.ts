@@ -76,7 +76,8 @@ export async function POST(req: Request) {
       estado: 'EXITOSO',
       conductor: {
         usuarioId: conductor._id,
-        nombre: conductor.nombre
+        nombre: conductor.nombre,
+        rut: conductor.rut // <-- ✨ ¡AQUÍ ESTÁ LA MAGIA AÑADIDA! ✨
       },
       vehiculo: {
         vehiculoId: vehiculoId,
