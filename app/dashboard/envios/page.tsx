@@ -45,6 +45,7 @@ export default function EnviosPage() {
     fetchData();
   }, []);
 
+  // --- 1. FUNCIÓN PARA CREAR UN ENVÍO ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -71,6 +72,33 @@ export default function EnviosPage() {
       setStatus({ type: 'error', msg: "Error de conexión." });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // --- 2. FUNCIÓN PARA FINALIZAR UN ENVÍO (Ahora está afuera, como hermana de handleSubmit) ---
+  const handleFinalizarEnvio = async (id: string, numeroEnvio: string) => {
+    if (!window.confirm(`¿Confirmas que el envío ${numeroEnvio} ha finalizado su ruta?`)) return;
+
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/envios/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'FINALIZADO' })
+      });
+
+      if (res.ok) {
+        setStatus({ type: 'success', msg: `Envío ${numeroEnvio} cerrado exitosamente.` });
+        const refresh = await fetch('/api/envios');
+        setEnvios(await refresh.json());
+      } else {
+        setStatus({ type: 'error', msg: "Error al actualizar el estado." });
+      }
+    } catch (err) {
+      setStatus({ type: 'error', msg: "Error de conexión." });
+    } finally {
+      setLoading(false);
+      setTimeout(() => setStatus(null), 3000);
     }
   };
 
@@ -140,7 +168,6 @@ export default function EnviosPage() {
 
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Peso Total (Kg)</label>
-                {/* ⚖️ CAMBIO AQUÍ: min="0" para bloquear negativos desde el HTML */}
                 <input required min="0" value={formData.pesoKg} onChange={e => setFormData({...formData, pesoKg: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Ej: 5000" type="number" />
               </div>
 
@@ -154,7 +181,6 @@ export default function EnviosPage() {
                 <input required value={formData.destino} onChange={e => setFormData({...formData, destino: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Ciudad destino" type="text" />
               </div>
 
-              {/* 📅 CAMBIO AQUÍ: required condicionado al estado */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Fecha Salida Est.</label>
                 <input required={formData.estado !== 'ABIERTO'} value={formData.fechaSalida} onChange={e => setFormData({...formData, fechaSalida: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" type="date" />
@@ -206,11 +232,12 @@ export default function EnviosPage() {
                 <th className="px-6 py-2">Conductor</th>
                 <th className="px-6 py-2">Patente</th>
                 <th className="px-6 py-2">Estado</th>
+                <th className="px-6 py-2 text-right">Acción</th>
               </tr>
             </thead>
             <tbody className="text-sm">
               {envios.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-6 text-slate-400 italic">No hay envíos registrados.</td></tr>
+                <tr><td colSpan={6} className="text-center py-6 text-slate-400 italic">No hay envíos registrados.</td></tr>
               ) : envios.map((envio) => (
                 <tr key={envio._id} className="bg-slate-50 group hover:shadow-md transition-shadow">
                   <td className="px-6 py-5 rounded-l-2xl font-black font-mono text-violet-900">
@@ -230,7 +257,7 @@ export default function EnviosPage() {
                   <td className="px-6 py-5 font-mono font-bold text-slate-600">
                     {envio.recursos?.patente || 'N/A'}
                   </td>
-                  <td className="px-6 py-5 rounded-r-2xl">
+                  <td className="px-6 py-5">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
                       envio.estado === 'ABIERTO' ? 'bg-slate-200 text-slate-600' :
                       envio.estado === 'PROGRAMADO' ? 'bg-blue-100 text-blue-800' :
@@ -240,6 +267,22 @@ export default function EnviosPage() {
                       {envio.estado}
                     </span>
                   </td>
+                  
+                  {/* CELDA DE ACCIONES */}
+                  <td className="px-6 py-5 rounded-r-2xl text-right">
+                    {envio.estado !== 'FINALIZADO' ? (
+                      <button 
+                        onClick={() => handleFinalizarEnvio(envio._id, envio.numeroEnvio)}
+                        className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                        title="Forzar Cierre de Ruta"
+                      >
+                        <span className="material-symbols-outlined text-sm">check_circle</span>
+                      </button>
+                    ) : (
+                      <span className="material-symbols-outlined text-slate-300" title="Ruta completada">done_all</span>
+                    )}
+                  </td>
+
                 </tr>
               ))}
             </tbody>
