@@ -12,22 +12,36 @@ export async function POST(req: Request) {
     
     const { numeroEnvio, origen, destino, fechaSalida, fechaLlegada, tipoCarga, pesoKg, conductorId, vehiculoId, estado } = body;
 
-    // 1. Validaciones básicas
-    if (!numeroEnvio || !origen || !destino || !tipoCarga || !pesoKg) {
-      return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
+    // 1. Validaciones básicas de campos vacíos
+    if (!numeroEnvio || !origen || !destino || !tipoCarga || pesoKg === undefined || pesoKg === "") {
+      return NextResponse.json({ error: "Faltan campos obligatorios de logística" }, { status: 400 });
     }
 
-    // 2. Buscamos el vehículo para copiar su patente (como lo pide tu modelo)
+    // ⚖️ 2. VALIDACIÓN DE PESO (No puede ser negativo)
+    const pesoNumerico = Number(pesoKg);
+    if (pesoNumerico < 0) {
+      return NextResponse.json({ error: "El peso de la carga no puede ser un número negativo" }, { status: 400 });
+    }
+
+    // 📅 3. VALIDACIÓN DE FECHAS (Obligatorias si NO es "ABIERTO")
+    const estadoActual = estado || 'ABIERTO';
+    if (estadoActual !== 'ABIERTO') {
+      if (!fechaSalida || !fechaLlegada) {
+        return NextResponse.json({ error: `Para pasar a estado ${estadoActual}, debes asignar las Fechas de Salida y Llegada` }, { status: 400 });
+      }
+    }
+
+    // 4. Buscamos el vehículo para copiar su patente
     let patenteVehiculo = null;
     if (vehiculoId) {
       const vehiculo = await Vehiculo.findById(vehiculoId);
       if (vehiculo) patenteVehiculo = vehiculo.patente;
     }
 
-    // 3. Creamos el Envío estructurado como dicta tu Modelo
+    // 5. Creamos el Envío estructurado
     const nuevoEnvio = await Envio.create({
       numeroEnvio: numeroEnvio.toUpperCase(),
-      estado: estado || 'ABIERTO',
+      estado: estadoActual,
       logistica: {
         origen,
         destino,
@@ -36,7 +50,7 @@ export async function POST(req: Request) {
       },
       carga: {
         tipo: tipoCarga,
-        pesoKg: Number(pesoKg)
+        pesoKg: pesoNumerico
       },
       recursos: {
         conductorId: conductorId || null,
@@ -48,7 +62,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ mensaje: "Envío programado con éxito", id: nuevoEnvio._id }, { status: 201 });
 
   } catch (error: any) {
-    // Si el numeroEnvio ya existe, MongoDB lanza el error 11000
     if (error.code === 11000) {
       return NextResponse.json({ error: "Este Número de Envío ya existe" }, { status: 400 });
     }
@@ -59,7 +72,6 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     await dbConnect();
-    // Traemos los envíos y "poblamos" los datos del conductor para ver su nombre en la tabla
     const envios = await Envio.find()
       .populate('recursos.conductorId', 'nombre')
       .sort({ fechaCreacion: -1 })

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 
 export default function EnviosPage() {
-  // --- ESTADOS ---
   const [conductores, setConductores] = useState<any[]>([]);
   const [vehiculos, setVehiculos] = useState<any[]>([]);
   const [envios, setEnvios] = useState<any[]>([]);
@@ -23,8 +22,6 @@ export default function EnviosPage() {
     pesoKg: ""
   });
 
-  // --- CARGAR DATOS ---
- // --- CARGAR DATOS (Fórmula directa estilo Tarjetas RFID) ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -38,13 +35,8 @@ export default function EnviosPage() {
         const vData = await resV.json();
         const eData = await resE.json();
 
-        // 1. Cargamos TODOS los usuarios sin filtrar el cargo, igual que en Tarjetas
         setConductores(Array.isArray(uData) ? uData : []);
-
-        // 2. Cargamos TODOS los vehículos
         setVehiculos(Array.isArray(vData) ? vData : []);
-
-        // 3. Cargamos los envíos
         setEnvios(Array.isArray(eData) ? eData : []);
       } catch (err) {
         console.error("Error cargando datos base", err);
@@ -53,7 +45,6 @@ export default function EnviosPage() {
     fetchData();
   }, []);
 
-  // --- ENVIAR FORMULARIO ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -85,7 +76,6 @@ export default function EnviosPage() {
 
   return (
     <div className="px-10 py-8 space-y-8">
-      {/* Header */}
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-violet-900 font-headline uppercase">Gestión de Envíos</h2>
@@ -93,7 +83,6 @@ export default function EnviosPage() {
         </div>
       </div>
 
-      {/* Main Form Card */}
       <section className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-8 bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
           <div className="flex items-center gap-3 mb-6">
@@ -110,13 +99,11 @@ export default function EnviosPage() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               
-              {/* Nro Envío */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">N° de Envío</label>
                 <input required value={formData.numeroEnvio} onChange={e => setFormData({...formData, numeroEnvio: e.target.value.toUpperCase()})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-mono font-bold uppercase" placeholder="Ej: TR-8090" type="text" />
               </div>
 
-              {/* Estado */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Estado Inicial</label>
                 <select value={formData.estado} onChange={e => setFormData({...formData, estado: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-bold text-slate-700">
@@ -126,27 +113,16 @@ export default function EnviosPage() {
                 </select>
               </div>
 
-              {/* Conductor Asignado - ¡AQUÍ ESTÁ EL CAMBIO! */}
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                  Responsable (Solo Conductores)
-                </label>
-                <select 
-                  required 
-                  value={formData.conductorId} 
-                  onChange={e => setFormData({...formData, conductorId: e.target.value})} 
-                  className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700"
-                >
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Responsable (Conductores)</label>
+                <select required value={formData.conductorId} onChange={e => setFormData({...formData, conductorId: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700">
                   <option value="">Seleccione un conductor...</option>
                   {conductores.map((c: any) => (
-                    <option key={c._id} value={c._id}>
-                      {c.nombre} - RUT: {c.rut}
-                    </option>
+                    <option key={c._id} value={c._id}>{c.nombre} - RUT: {c.rut}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Vehículo */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Vehículo (Camión)</label>
                 <select required value={formData.vehiculoId} onChange={e => setFormData({...formData, vehiculoId: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700">
@@ -157,38 +133,37 @@ export default function EnviosPage() {
                 </select>
               </div>
 
-              {/* Carga - Tipo */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Tipo de Carga</label>
-                <input required value={formData.tipoCarga} onChange={e => setFormData({...formData, tipoCarga: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Ej: Materiales de Construcción" type="text" />
+                <input required value={formData.tipoCarga} onChange={e => setFormData({...formData, tipoCarga: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Ej: Materiales" type="text" />
               </div>
 
-              {/* Carga - Peso */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Peso Total (Kg)</label>
-                <input required value={formData.pesoKg} onChange={e => setFormData({...formData, pesoKg: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Ej: 5000" type="number" />
+                {/* ⚖️ CAMBIO AQUÍ: min="0" para bloquear negativos desde el HTML */}
+                <input required min="0" value={formData.pesoKg} onChange={e => setFormData({...formData, pesoKg: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Ej: 5000" type="number" />
               </div>
 
-              {/* Origen */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Origen</label>
                 <input required value={formData.origen} onChange={e => setFormData({...formData, origen: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Bodega Central" type="text" />
               </div>
 
-              {/* Destino */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Destino</label>
-                <input required value={formData.destino} onChange={e => setFormData({...formData, destino: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Ciudad o Planta destino" type="text" />
+                <input required value={formData.destino} onChange={e => setFormData({...formData, destino: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Ciudad destino" type="text" />
               </div>
 
-              {/* Fechas */}
+              {/* 📅 CAMBIO AQUÍ: required condicionado al estado */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Fecha Salida Est.</label>
-                <input value={formData.fechaSalida} onChange={e => setFormData({...formData, fechaSalida: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" type="date" />
+                <input required={formData.estado !== 'ABIERTO'} value={formData.fechaSalida} onChange={e => setFormData({...formData, fechaSalida: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" type="date" />
+                {formData.estado !== 'ABIERTO' && <p className="text-[10px] text-red-500 font-bold mt-1">Obligatorio para estado {formData.estado}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Fecha Llegada Est.</label>
-                <input value={formData.fechaLlegada} onChange={e => setFormData({...formData, fechaLlegada: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" type="date" />
+                <input required={formData.estado !== 'ABIERTO'} value={formData.fechaLlegada} onChange={e => setFormData({...formData, fechaLlegada: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" type="date" />
+                {formData.estado !== 'ABIERTO' && <p className="text-[10px] text-red-500 font-bold mt-1">Obligatorio para estado {formData.estado}</p>}
               </div>
 
             </div>
@@ -201,7 +176,6 @@ export default function EnviosPage() {
           </form>
         </div>
 
-        {/* Right Side Widget (Métricas) */}
         <div className="col-span-12 lg:col-span-4 space-y-6">
           <div className="bg-violet-900 p-8 rounded-3xl text-white relative overflow-hidden h-full flex flex-col justify-between">
             <div className="relative z-10">
@@ -211,7 +185,7 @@ export default function EnviosPage() {
             <div className="relative z-10 space-y-4 mt-8">
               <div className="flex justify-between items-end">
                 <span className="text-5xl font-black font-headline">{envios.filter(e => e.estado === 'EN_RUTA').length}</span>
-                <span className="material-symbols-outlined text-4xl opacity-40">Gestion de Envios</span>
+                <span className="material-symbols-outlined text-4xl opacity-40">local_shipping</span>
               </div>
               <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 border-t border-white/10 pt-2">Vehículos en terreno</p>
             </div>
@@ -219,7 +193,6 @@ export default function EnviosPage() {
         </div>
       </section>
 
-{/* Tabla Dinámica de Envíos */}
       <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold font-headline">Registro de Operaciones</h3>
@@ -230,7 +203,6 @@ export default function EnviosPage() {
               <tr className="text-slate-400 uppercase text-[10px] font-black tracking-[0.2em]">
                 <th className="px-6 py-2">ID Envío</th>
                 <th className="px-6 py-2">Ruta (Origen &gt; Destino)</th>
-                {/* NUEVA COLUMNA: CONDUCTOR */}
                 <th className="px-6 py-2">Conductor</th>
                 <th className="px-6 py-2">Patente</th>
                 <th className="px-6 py-2">Estado</th>
@@ -251,13 +223,10 @@ export default function EnviosPage() {
                       <span className="font-semibold">{envio.logistica?.destino}</span>
                     </div>
                   </td>
-                  
-                  {/* NUEVA CELDA: DIBUJAMOS EL NOMBRE DEL CONDUCTOR */}
                   <td className="px-6 py-5 font-bold text-slate-700 flex items-center gap-2">
                     <span className="material-symbols-outlined text-slate-400 text-sm">person</span>
                     {envio.recursos?.conductorId?.nombre || 'Sin asignar'}
                   </td>
-
                   <td className="px-6 py-5 font-mono font-bold text-slate-600">
                     {envio.recursos?.patente || 'N/A'}
                   </td>
