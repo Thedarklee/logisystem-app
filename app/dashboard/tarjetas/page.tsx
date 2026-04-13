@@ -161,8 +161,8 @@ export default function GestionRFIDPage() {
               <table className="w-full text-left border-separate border-spacing-y-3">
                 <thead>
                   <tr className="text-slate-400 uppercase text-[10px] font-black tracking-[0.2em]">
-                    <th className="px-6 py-2">UID</th>
-                    <th className="px-6 py-2">Usuario</th>
+                    <th className="px-6 py-2">Nombre</th>
+                    <th className="px-6 py-2">RUT</th>
                     <th className="px-6 py-2">Estado</th>
                     <th className="px-6 py-2 text-right">Acciones</th>
                   </tr>
@@ -170,14 +170,26 @@ export default function GestionRFIDPage() {
                 <tbody className="text-sm">
                   {tarjetas.map((t) => (
                     <tr key={t._id} className="bg-slate-50 group hover:shadow-md transition-shadow">
-                      <td className="px-6 py-4 rounded-l-2xl font-mono font-bold text-violet-800 uppercase italic">
-                        {t.uid}
-                      </td>
-                      <td className="px-6 py-4">
+                      
+                      {/* 1. Columna Nombre */}
+                      <td className="px-6 py-4 rounded-l-2xl font-bold text-violet-900 text-base">
                         {t.usuarioAsignado ? (
-                          <span className="font-bold text-slate-700">{t.usuarioAsignado.nombre}</span>
-                        ) : <span className="text-slate-400 italic">No vinculada</span>}
+                          t.usuarioAsignado.nombre
+                        ) : (
+                          <span className="text-slate-400 italic font-normal">Tarjeta sin asignar</span>
+                        )}
                       </td>
+
+                      {/* 2. Columna RUT */}
+                      <td className="px-6 py-4 font-mono text-slate-600">
+                        {t.usuarioAsignado ? (
+                          t.usuarioAsignado.rut
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </td>
+
+                      {/* 3. Columna Estado */}
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
                           t.estado === 'ACTIVA' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
@@ -185,6 +197,8 @@ export default function GestionRFIDPage() {
                           {t.estado}
                         </span>
                       </td>
+
+                      {/* 4. Columna Acciones */}
                       <td className="px-6 py-4 rounded-r-2xl text-right">
                         <div className="flex justify-end gap-2">
                           <button onClick={() => setTarjetaEditando(t)} className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200">
@@ -195,6 +209,7 @@ export default function GestionRFIDPage() {
                           </button>
                         </div>
                       </td>
+
                     </tr>
                   ))}
                 </tbody>
