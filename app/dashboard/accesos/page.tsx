@@ -128,19 +128,11 @@ export default function AccesosPage() {
                         {acceso.conductor?.nombre || 'Desconocido'}
                       </span>
                       <span className="text-[10px] font-mono text-slate-500 mt-0.5">
-                        {/* Lógica de extracción de RUT: 1. Desde populate, 2. Desde conductor.rut, 3. Desde observaciones (visitante) */}
-                        {acceso.conductor?.usuarioId?.rut 
-                          ? `RUT: ${acceso.conductor.usuarioId.rut}` 
-                          : acceso.conductor?.rut 
-                            ? `RUT: ${acceso.conductor.rut}`
-                            : acceso.observaciones && acceso.observaciones.includes('RUT:') 
-                              ? `RUT: ${acceso.observaciones.split('RUT: ')[1]}`
-                              : 'RUT NO REGISTRADO'
-                        }
+                        {/* Ahora la lectura es directa y limpia */}
+                        RUT: {acceso.conductor?.rut || 'NO REGISTRADO'}
                       </span>
                     </div>
                   </td>
-
                   <td className="px-8 py-6">
                     <span className="font-mono text-sm font-semibold bg-slate-100 px-2 py-1 rounded text-slate-700 uppercase">
                       {acceso.vehiculo?.patente || 'S/N'}

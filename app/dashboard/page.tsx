@@ -71,15 +71,8 @@ export default function DashboardPage() {
                           {acc.conductor?.nombre || 'Desconocido'}
                         </span>
                         <span className="text-[10px] font-mono text-slate-400 mt-0.5">
-                          {/* Lógica de extracción del RUT (igual a la de AccesosPage) */}
-                          {acc.conductor?.usuarioId?.rut 
-                            ? `RUT: ${acc.conductor.usuarioId.rut}` 
-                            : acc.conductor?.rut 
-                              ? `RUT: ${acc.conductor.rut}`
-                              : acc.observaciones && acc.observaciones.includes('RUT:') 
-                                ? `RUT: ${acc.observaciones.split('RUT: ')[1]}`
-                                : 'RUT NO REGISTRADO'
-                          }
+                          {/* Ahora la lectura es directa y limpia */}
+                          RUT: {acc.conductor?.rut || 'NO REGISTRADO'}
                         </span>
                       </div>
                     </td>
