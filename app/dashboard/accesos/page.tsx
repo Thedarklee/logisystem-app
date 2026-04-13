@@ -12,16 +12,15 @@ export default function AccesosPage() {
   // Función para cargar los datos desde la API
   const cargarDatos = async () => {
     try {
-      // Usamos la API de stats que ya creamos para el dashboard
       const res = await fetch('/api/dashboard/stats');
       const data = await res.json();
       
       setAccesos(data.recientes || []);
       setStats({
-        entradas: data.stats.entradas || 0,
-        salidas: data.stats.salidas || 0,
-        manuales: data.recientes.filter((a: any) => a.metodo === 'MANUAL').length,
-        alertas: data.stats.alertas || 0
+        entradas: data.stats?.entradas || 0,
+        salidas: data.stats?.salidas || 0,
+        manuales: (data.recientes || []).filter((a: any) => a.metodo === 'MANUAL').length,
+        alertas: data.stats?.alertas || 0
       });
     } catch (error) {
       console.error("Error cargando historial:", error);
@@ -40,13 +39,13 @@ export default function AccesosPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-violet-900 font-headline uppercase">Historial de Accesos</h1>
-          <p className="text-slate-500 font-medium mt-1">Monitoreo en tiempo real de entradas y salidas de flota.</p>
+          <p className="text-slate-500 font-medium mt-1">Monitoreo en tiempo real de entradas y salidas de planta.</p>
         </div>
         <button 
           onClick={() => router.push('/dashboard/accesos/nuevo')}
           className="bg-violet-800 hover:bg-violet-900 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-all duration-300 active:scale-95"
         >
-          <span className="material-symbols-outlined text-lg">Añadir</span>
+          <span className="material-symbols-outlined text-lg">add_box</span>
           Registro Manual
         </button>
       </div>
@@ -62,7 +61,7 @@ export default function AccesosPage() {
           <h3 className="text-3xl font-black mt-2 font-headline text-slate-800">{stats.salidas}</h3>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-violet-800">
-          <p className="text-[10px] font-bold tracking-widest text-violet-800 uppercase">Manuales</p>
+          <p className="text-[10px] font-bold tracking-widest text-violet-800 uppercase">Manuales / Visitas</p>
           <h3 className="text-3xl font-black mt-2 font-headline text-slate-800">{stats.manuales}</h3>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-red-500">
@@ -80,7 +79,8 @@ export default function AccesosPage() {
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Fecha/Hora</th>
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Tipo</th>
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Método</th>
-                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Conductor</th>
+                {/* Cambiamos el título de la columna aquí */}
+                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Personal / RUT</th>
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Vehículo</th>
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Estado</th>
               </tr>
@@ -88,6 +88,8 @@ export default function AccesosPage() {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr><td colSpan={6} className="text-center py-10 text-slate-400">Cargando historial...</td></tr>
+              ) : accesos.length === 0 ? (
+                <tr><td colSpan={6} className="text-center py-10 text-slate-400 italic">No hay registros de acceso recientes.</td></tr>
               ) : accesos.map((acceso: any) => (
                 <tr key={acceso._id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-8 py-6">
@@ -113,17 +115,35 @@ export default function AccesosPage() {
                   <td className="px-8 py-6">
                     <span className="text-sm font-medium text-slate-600 flex items-center gap-2">
                       <span className="material-symbols-outlined text-sm text-violet-600">
-                        {acceso.metodo === 'RFID' ? 'sensors' : ''}
+                        {acceso.metodo === 'RFID' ? 'sensors' : 'edit_document'}
                       </span> 
                       {acceso.metodo}
                     </span>
                   </td>
+                  
+                  {/* === COLUMNA CONDUCTOR Y RUT ACTUALIZADA === */}
                   <td className="px-8 py-6">
-                    <span className="text-sm font-bold text-slate-800">{acceso.conductor.nombre}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-800">
+                        {acceso.conductor?.nombre || 'Desconocido'}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500 mt-0.5">
+                        {/* Lógica de extracción de RUT: 1. Desde populate, 2. Desde conductor.rut, 3. Desde observaciones (visitante) */}
+                        {acceso.conductor?.usuarioId?.rut 
+                          ? `RUT: ${acceso.conductor.usuarioId.rut}` 
+                          : acceso.conductor?.rut 
+                            ? `RUT: ${acceso.conductor.rut}`
+                            : acceso.observaciones && acceso.observaciones.includes('RUT:') 
+                              ? `RUT: ${acceso.observaciones.split('RUT: ')[1]}`
+                              : 'RUT NO REGISTRADO'
+                        }
+                      </span>
+                    </div>
                   </td>
+
                   <td className="px-8 py-6">
                     <span className="font-mono text-sm font-semibold bg-slate-100 px-2 py-1 rounded text-slate-700 uppercase">
-                      {acceso.vehiculo.patente}
+                      {acceso.vehiculo?.patente || 'S/N'}
                     </span>
                   </td>
                   <td className="px-8 py-6">
