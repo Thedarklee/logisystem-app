@@ -11,20 +11,18 @@ export default function RegistroManualPage() {
   const [formData, setFormData] = useState({
     rut: "",
     patente: "",
-    tipoMovimiento: "ENTRADA"
+    tipoMovimiento: "ENTRADA",
+    isVisitante: false // NUEVO ESTADO
   });
 
   // --- FUNCIONES DE VALIDACIÓN ---
-const validarRutChileno = (rut: string) => {
+  const validarRutChileno = (rut: string) => {
     if (!rut) return false;
-    // Limpia puntos y espacios
     const valor = rut.replace(/\./g, '').replace(/\s/g, '');
-    
-    // Solo verifica el FORMATO: (números) seguido de (-) seguido de (1 número o K)
-    // No hace el cálculo matemático del Módulo 11.
     return /^[0-9]+-[0-9kK]{1}$/.test(valor); 
   };
-    const validarPatenteChilena = (patente: string) => {
+  
+  const validarPatenteChilena = (patente: string) => {
     if (!patente) return false;
     const valor = patente.replace(/-/g, '').replace(/\s/g, '').toUpperCase();
     return /^([A-Z]{2}[0-9]{4}|[A-Z]{4}[0-9]{2})$/.test(valor);
@@ -36,35 +34,28 @@ const validarRutChileno = (rut: string) => {
     setLoading(true);
     setStatus(null);
 
-    console.log("1. Botón presionado. Iniciando validaciones...");
-
-    // 1. Validar el RUT
+    // 1. Validar el RUT (Aplica para ambos)
     if (!validarRutChileno(formData.rut)) {
-      console.log("❌ Falló validación de RUT Frontend");
       setStatus({ type: 'error', msg: "El RUT ingresado no es válido (Recuerda poner el guion, Ej: 12345678-9)" });
       setLoading(false);
       return; 
     }
 
-    // 2. Validar la Patente
-    if (!validarPatenteChilena(formData.patente)) {
-      console.log("❌ Falló validación de Patente Frontend");
+    // 2. Validar la Patente (SOLO SI NO ES VISITANTE)
+    if (!formData.isVisitante && !validarPatenteChilena(formData.patente)) {
       setStatus({ type: 'error', msg: "La Patente no es válida (Ej: ABCD12 o AB1234)" });
       setLoading(false);
       return; 
     }
 
-    console.log("✅ Validaciones Frontend pasadas. Enviando a la API...");
-
     // Si todo está bien, lo enviamos a la API
     try {
       const payload = {
-        rut: formData.rut.trim(), // Lo enviamos tal cual lo escribes
-        patente: formData.patente.toUpperCase().trim(), // Lo enviamos tal cual, con guion
-        tipoMovimiento: formData.tipoMovimiento
-        };
-
-      console.log("2. Datos exactos que se envían a la BD:", payload);
+        rut: formData.rut.trim(),
+        patente: formData.patente.toUpperCase().trim(),
+        tipoMovimiento: formData.tipoMovimiento,
+        isVisitante: formData.isVisitante // Lo enviamos al backend
+      };
 
       const res = await fetch("/api/access/manual", {
         method: "POST",
@@ -73,16 +64,15 @@ const validarRutChileno = (rut: string) => {
       });
 
       const data = await res.json();
-      console.log("3. Respuesta del servidor:", res.status, data);
 
       if (res.ok) {
-        setStatus({ type: 'success', msg: "¡Acceso registrado correctamente!" });
-        setFormData({ rut: "", patente: "", tipoMovimiento: "ENTRADA" }); 
+        setStatus({ type: 'success', msg: data.mensaje });
+        // Limpiamos todo
+        setFormData({ rut: "", patente: "", tipoMovimiento: "ENTRADA", isVisitante: false }); 
       } else {
         setStatus({ type: 'error', msg: `Error API: ${data.error}` });
       }
     } catch (err: any) {
-      console.error("Error catastrófico en la conexión:", err);
       setStatus({ type: 'error', msg: `Fallo de conexión: ${err.message}` });
     } finally {
       setLoading(false);
@@ -91,22 +81,9 @@ const validarRutChileno = (rut: string) => {
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6">
-      
-      {/* 🛠️ CAJA DE DEBUG VISUAL (Borrar cuando todo funcione) 🛠️ */}
-      <div className="bg-slate-900 text-emerald-400 p-6 rounded-2xl font-mono text-sm shadow-xl border border-slate-700">
-        <h3 className="text-white font-black mb-2 border-b border-slate-700 pb-2">📟 PANTALLA DE DEBUG (EN VIVO)</h3>
-        <ul className="space-y-1">
-          <li><strong>RUT escrito:</strong> <span className="text-white">"{formData.rut}"</span></li>
-          <li><strong>¿RUT es válido matemáticamente?:</strong> {validarRutChileno(formData.rut) ? <span className="text-emerald-400">SÍ ✅</span> : <span className="text-red-400">NO ❌</span>}</li>
-          <li className="pt-2"><strong>Patente escrita:</strong> <span className="text-white">"{formData.patente}"</span></li>
-          <li><strong>¿Patente válida?:</strong> {validarPatenteChilena(formData.patente) ? <span className="text-emerald-400">SÍ ✅</span> : <span className="text-red-400">NO ❌</span>}</li>
-          <li className="pt-2"><strong>Movimiento:</strong> <span className="text-amber-400">{formData.tipoMovimiento}</span></li>
-        </ul>
-      </div>
-
       <div className="mb-8">
         <h1 className="text-3xl font-black text-violet-900 uppercase">Registro Manual</h1>
-        <p className="text-slate-500">Usa este formulario si el sistema RFID falla.</p>
+        <p className="text-slate-500">Usa este formulario si el sistema RFID falla o para visitas.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
@@ -140,9 +117,23 @@ const validarRutChileno = (rut: string) => {
 
           <hr className="border-slate-100" />
 
+          {/* CHECKBOX VISITANTE */}
+          <div className="bg-violet-50 p-4 rounded-xl border border-violet-100">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={formData.isVisitante} 
+                onChange={(e) => setFormData({...formData, isVisitante: e.target.checked})} 
+                className="w-5 h-5 rounded text-violet-600 focus:ring-violet-800" 
+              />
+              <span className="font-bold text-violet-900 text-sm">Registrar como Visitante Externo</span>
+            </label>
+            <p className="text-xs text-violet-500 mt-1 ml-8">Marca esta casilla para saltar las validaciones logísticas de envíos y flota.</p>
+          </div>
+
           {/* RUT */}
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">RUT del Conductor (Con guion)</label>
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">RUT de la Persona (Con guion)</label>
             <input 
               required
               type="text" 
@@ -155,12 +146,14 @@ const validarRutChileno = (rut: string) => {
 
           {/* Patente */}
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Patente</label>
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">
+              {formData.isVisitante ? "Patente (Opcional)" : "Patente del Camión"}
+            </label>
             <input 
-              required
+              required={!formData.isVisitante} // Si es visitante, ya no es obligatoria
               type="text" 
               className="w-full px-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-800 outline-none transition-all font-mono font-bold uppercase text-lg tracking-wider"
-              placeholder="ABCD-12"
+              placeholder={formData.isVisitante ? "Dejar vacío si entra a pie" : "ABCD-12"}
               value={formData.patente}
               onChange={(e) => setFormData({...formData, patente: e.target.value.toUpperCase()})}
             />

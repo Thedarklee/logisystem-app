@@ -4,15 +4,46 @@ import dbConnect from '@/lib/mongodb';
 import LecturaAcceso from '@/models/LecturaAcceso';
 import Usuario from '@/models/Usuario';
 import Vehiculo from '@/models/Vehiculo';
-import Envio from '@/models/Envio'; // Importamos el cerebro logístico
+import Envio from '@/models/Envio';
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const { rut, patente, tipoMovimiento } = await req.json();
+    
+    // Agregamos isVisitante a lo que recibimos del guardia
+    const { rut, patente, tipoMovimiento, isVisitante } = await req.json();
 
-    if (!rut || !patente || !tipoMovimiento) {
+    if (!rut || !tipoMovimiento) {
       return NextResponse.json({ error: "Faltan datos obligatorios" }, { status: 400 });
+    }
+
+    // ----------------------------------------------------------------------
+    // 🛑 RUTA EXCEPCIONAL PARA VISITANTES
+    // ----------------------------------------------------------------------
+    if (isVisitante) {
+      const nuevoRegistro = await LecturaAcceso.create({
+        tipoMovimiento,
+        metodo: 'MANUAL', 
+        estado: 'EXITOSO', 
+        conductor: {
+          usuarioId: null, // No está en la BDD
+          nombre: `Visitante`
+        },
+        vehiculo: {
+          vehiculoId: null, // No es de la flota
+          patente: patente ? patente.toUpperCase().trim() : 'A PIE / SIN REGISTRO'
+        },
+        observaciones: `Registro manual (Guardia). Ingreso de VISITANTE. RUT: ${rut}`
+      });
+
+      return NextResponse.json({ mensaje: "Acceso de visitante autorizado" }, { status: 201 });
+    }
+
+    // ----------------------------------------------------------------------
+    // 🚚 RUTA ESTRICTA PARA FLOTA Y CONDUCTORES (La que ya tenías)
+    // ----------------------------------------------------------------------
+    if (!patente) {
+       return NextResponse.json({ error: "Falta la patente del vehículo" }, { status: 400 });
     }
 
     // 1. Buscamos si existe el conductor por RUT
@@ -27,9 +58,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Vehículo no registrado en la flota" }, { status: 404 });
     }
 
-    // ----------------------------------------------------------------------
-    // 🧠 LA NUEVA REGLA: Bloqueo por falta de Envío (Igual que el RFID)
-    // ----------------------------------------------------------------------
+    // 3. LA REGLA LOGÍSTICA: Bloqueo por falta de Envío
     const envioActivo = await Envio.findOne({
       'recursos.conductorId': conductor._id,
       estado: { $in: ['PROGRAMADO', 'EN_RUTA'] }
@@ -41,14 +70,14 @@ export async function POST(req: Request) {
       }, { status: 403 });
     }
 
-    // 🕵️‍♀️ BONUS DE SEGURIDAD: ¿El camión que ve el guardia es el correcto?
+    // 4. BONUS DE SEGURIDAD: ¿El camión es el correcto?
     if (envioActivo.recursos.vehiculoId.toString() !== vehiculo._id.toString()) {
       return NextResponse.json({ 
-        error: `Alerta de seguridad: El conductor tiene un envío asignado, pero debe usar el camión patente ${envioActivo.recursos.patente}, no el ${vehiculo.patente}.` 
+        error: `Alerta de seguridad: El conductor tiene un envío asignado, pero debe usar el camión ${envioActivo.recursos.patente}.` 
       }, { status: 403 });
     }
 
-    // 3. Todo está en regla. Guardamos el registro manual
+    // Todo está en regla. Guardamos el registro manual
     const nuevoRegistro = await LecturaAcceso.create({
       tipoMovimiento,
       metodo: 'MANUAL', 
@@ -64,9 +93,7 @@ export async function POST(req: Request) {
       observaciones: `Registro manual (Guardia). Asociado al envío: ${envioActivo.numeroEnvio}`
     });
 
-    // ----------------------------------------------------------------------
-    // 🚀 ACTUALIZACIÓN AUTOMÁTICA DEL ENVÍO
-    // ----------------------------------------------------------------------
+    // ACTUALIZACIÓN AUTOMÁTICA DEL ENVÍO
     if (tipoMovimiento === 'SALIDA' && envioActivo.estado === 'PROGRAMADO') {
       envioActivo.estado = 'EN_RUTA';
       envioActivo.logistica.fechaSalidaEstimada = new Date(); 
