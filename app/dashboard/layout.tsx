@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import RFIDListener from "@/components/RFIDListener";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname(); // Para saber en qué página estamos y pintar el menú
@@ -58,6 +59,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         {/* Aquí se inyectan las páginas internas */}
         {children} 
+      {/* CONTENIDO PRINCIPAL */}
+      <main className="flex-1 ml-64 min-h-screen flex flex-col relative overflow-x-hidden">
+        <header className="w-full h-16 sticky top-0 z-40 flex justify-end items-center px-8 bg-transparent">
+             <span className="material-symbols-outlined text-slate-600 mr-4">notifications</span>
+             <div className="w-8 h-8 rounded-full bg-violet-200"></div>
+        </header>
+        
+        {/* Aquí se inyectan las páginas internas */}
+        {children} 
+
+        {/* ✨ AQUÍ ESTÁ NUESTRO VIGILANTE DE POP-UPS ✨ */}
+        <RFIDListener />
+        
+      </main>
       </main>
     </div>
   );
