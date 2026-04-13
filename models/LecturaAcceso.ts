@@ -14,22 +14,23 @@ const lecturaAccesoSchema = new Schema({
   },
   estado: { 
     type: String, 
-    enum: ['EXITOSO', 'FALLIDO'], 
+    enum: ['EXITOSO', 'FALLIDO', 'ALERTA'], // Agregué ALERTA por si acaso
     required: true 
   },
   
   // Datos desnormalizados para que las consultas del Dashboard sean ultrarrápidas
   conductor: {
     usuarioId: { type: Schema.Types.ObjectId, ref: 'Usuario' },
-    nombre: { type: String }
+    nombre: { type: String },
+    rut: { type: String } // <--- ✨ ¡ESTE ES EL ESLABÓN PERDIDO! ✨
   },
   vehiculo: {
     vehiculoId: { type: Schema.Types.ObjectId, ref: 'Vehiculo' },
     patente: { type: String }
   },
   
-  dispositivoId: { type: String }, // Ej: "ESP32_PLANTA_01"
-  observaciones: { type: String } // Usado en registros manuales (HU04) o fallos (HU10)
+  dispositivoId: { type: String },
+  observaciones: { type: String } 
 });
 
 const LecturaAcceso = models.LecturaAcceso || mongoose.model('LecturaAcceso', lecturaAccesoSchema);
