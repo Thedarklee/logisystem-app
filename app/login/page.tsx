@@ -35,6 +35,11 @@ export default function LoginPage() {
       }
 
       if (res.ok) {
+        // ✨ ¡AQUÍ ESTÁ LA MAGIA QUE FALTABA! ✨
+        // Guardamos los datos del usuario en el navegador para que el Dashboard sepa quién es.
+        localStorage.setItem('usuarioLogueado', JSON.stringify(data.usuario));
+        
+        // Y ahora sí, lo mandamos al Dashboard
         router.push("/dashboard");
       } else {
         // 4. MOSTRAR EL ERROR EXACTO QUE MANDA LA API (Con el código HTTP)

@@ -8,32 +8,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
 
-  // ------------------------------------------------------------------------
-  // 🔐 CONTROL DE ROLES (RBAC)
-  // En el futuro, esto lo leerás de tu Login (ej: localStorage.getItem('usuario'))
-  // Por ahora, cambia esta palabra a 'OPERADOR' o 'ADMIN' para probar cómo cambia la pantalla.
-  // ------------------------------------------------------------------------
-  const [userRole, setUserRole] = useState<"ADMIN" | "OPERADOR">("ADMIN"); 
-  const [userName, setUserName] = useState("Usuario");
+  // Iniciamos con valores por defecto, pero se actualizarán inmediatamente en el useEffect
+  const [userRole, setUserRole] = useState<"ADMIN" | "OPERADOR">("OPERADOR"); 
+  const [userName, setUserName] = useState("Cargando...");
+  const [isMounted, setIsMounted] = useState(false); // Para evitar parpadeos visuales
 
   useEffect(() => {
-    // Aquí podrías leer el localstorage real de tu login:
-    // const userData = localStorage.getItem('usuarioLogueado');
-    // if (userData) { setUserRole(JSON.parse(userData).cargo); }
+    setIsMounted(true);
+    
+    // 1. LEER EL USUARIO REAL DEL LOGIN
+    // Cambia 'usuarioLogueado' por el nombre exacto de la variable que usas en tu Login si es diferente
+    const userDataString = localStorage.getItem('usuarioLogueado'); 
+    
+    let currentRole = "OPERADOR"; // Por seguridad, si falla, es operador
 
-    // 🛡️ PROTECCIÓN DE RUTAS: Si es OPERADOR y está en una ruta prohibida, lo pateamos
-    if (userRole === "OPERADOR") {
+    if (userDataString) {
+      try {
+        const userData = JSON.parse(userDataString);
+        currentRole = userData.cargo || "OPERADOR";
+        setUserRole(currentRole as "ADMIN" | "OPERADOR");
+        setUserName(userData.nombre || "Usuario");
+      } catch (error) {
+        console.error("Error leyendo los datos del usuario", error);
+      }
+    } else {
+      // Si no hay nadie logueado, lo pateamos al Login
+      router.push("/login");
+      return;
+    }
+
+    // 2. PROTECCIÓN DE RUTAS PARA EL OPERADOR
+    if (currentRole === "OPERADOR") {
       const rutasProhibidas = ["/dashboard/usuarios", "/dashboard/vehiculos", "/dashboard/tarjetas"];
       
-      // Revisamos si la ruta actual empieza con alguna de las prohibidas
       const accesoIlegal = rutasProhibidas.some(ruta => pathname.startsWith(ruta));
       
       if (accesoIlegal) {
         alert("Acceso Denegado: No tienes permisos de Administrador para ver esta sección.");
-        router.push("/dashboard"); // Lo mandamos al inicio
+        router.push("/dashboard"); 
       }
     }
-  }, [pathname, userRole, router]);
+  }, [pathname, router]);
+
+  // Evitamos renderizar el menú antes de saber quién es (evita parpadeos)
+  if (!isMounted) return <div className="min-h-screen bg-[#f7f9fb]"></div>;
 
   return (
     <div className="bg-[#f7f9fb] text-[#191c1e] min-h-screen flex">
@@ -88,6 +106,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </>
           )}
         </nav>
+        
+        {/* BOTÓN CERRAR SESIÓN (Extra, muy útil) */}
+        <div className="mt-auto px-6">
+          <button 
+            onClick={() => {
+              localStorage.removeItem('usuarioLogueado');
+              router.push('/login');
+            }}
+            className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 rounded-xl transition-all"
+          >
+            <span className="material-symbols-outlined">logout</span> Cerrar Sesión
+          </button>
+        </div>
       </aside>
 
       {/* CONTENIDO PRINCIPAL */}
@@ -107,7 +138,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </p>
               </div>
               <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-white shadow-md ${userRole === 'ADMIN' ? 'bg-violet-700' : 'bg-emerald-600'}`}>
-                {userName.charAt(0)}
+                {userName.charAt(0).toUpperCase()}
               </div>
             </div>
           </div>
