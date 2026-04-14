@@ -168,7 +168,7 @@ export default function EnviosPage() {
 
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Peso Total (Kg)</label>
-                <input required min="0" value={formData.pesoKg} onChange={e => setFormData({...formData, pesoKg: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Ej: 5000" type="number" />
+                <input required min="1" value={formData.pesoKg} onChange={e => setFormData({...formData, pesoKg: e.target.value})} className="w-full bg-slate-50 rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-violet-800 outline-none font-semibold text-slate-700" placeholder="Ej: 5000" type="number" />
               </div>
 
               <div className="space-y-2">
