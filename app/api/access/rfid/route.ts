@@ -10,85 +10,88 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
     const body = await req.json();
-    
-    // El Arduino SOLO envía el UID, no envía RUT ni patente
     const { uid } = body;
+
+    // ----------------------------------------------------------------------
+    // 🛡️ FUNCIÓN ESPÍA: Guarda los intentos fallidos en la Base de Datos
+    // ----------------------------------------------------------------------
+    const registrarFallo = async (motivo: string, uidTarjeta: string = "N/A", nombreConductor: string = "Desconocido") => {
+      await LecturaAcceso.create({
+        tipoMovimiento: 'ENTRADA', // Por defecto para que no rompa el modelo
+        metodo: 'AUTOMATICO', 
+        estado: 'FALLIDO',
+        conductor: { nombre: nombreConductor, rut: 'N/A' },
+        vehiculo: { patente: 'N/A' },
+        observaciones: `ACCESO DENEGADO: ${motivo} (UID Tarjeta: ${uidTarjeta})`
+      });
+    };
 
     // 1. Validación básica
     if (!uid) {
+      await registrarFallo("UID no proporcionado por el lector");
       return NextResponse.json({ error: "UID no proporcionado" }, { status: 400 });
     }
 
     const uidLimpio = uid.toUpperCase().trim();
 
-    // 2. Buscamos la Tarjeta y verificamos su estado
+    // 2. Buscamos la Tarjeta
     const tarjeta = await Tarjeta.findOne({ uid: uidLimpio });
     if (!tarjeta) {
-      return NextResponse.json({ error: "Tarjeta no registrada en el sistema" }, { status: 404 });
+      await registrarFallo("Tarjeta no registrada en el sistema", uidLimpio);
+      return NextResponse.json({ error: "Tarjeta no registrada" }, { status: 404 });
     }
 
     if (tarjeta.estado !== 'ACTIVA') {
-      return NextResponse.json({ error: `Acceso denegado: Tarjeta ${tarjeta.estado}` }, { status: 403 });
+      await registrarFallo(`Tarjeta en estado: ${tarjeta.estado}`, uidLimpio);
+      return NextResponse.json({ error: "Tarjeta bloqueada o inactiva" }, { status: 403 });
     }
 
-    // 3. Buscamos a quién le pertenece (Conductor)
+    // 3. Buscamos al Conductor
     if (!tarjeta.usuarioAsignado) {
-      return NextResponse.json({ error: "Tarjeta sin conductor asignado" }, { status: 403 });
+      await registrarFallo("Tarjeta sin conductor asignado", uidLimpio);
+      return NextResponse.json({ error: "Tarjeta sin conductor" }, { status: 403 });
     }
+    
     const conductor = await Usuario.findById(tarjeta.usuarioAsignado);
-
     if (!conductor) {
-       return NextResponse.json({ error: "El conductor asignado a la tarjeta no existe" }, { status: 404 });
+      await registrarFallo("El conductor de esta tarjeta ya no existe en la BD", uidLimpio);
+      return NextResponse.json({ error: "Conductor fantasma" }, { status: 404 });
     }
 
-    // ----------------------------------------------------------------------
-    // 🧠 EL NUEVO CEREBRO: Buscamos el Vehículo a través del Envío
-    // ----------------------------------------------------------------------
+    // 4. Verificamos el Envío (El Cerebro)
     const envioActivo = await Envio.findOne({
       'recursos.conductorId': conductor._id,
       estado: { $in: ['PROGRAMADO', 'EN_RUTA'] }
     });
 
     if (!envioActivo) {
-      return NextResponse.json({ 
-        error: "Acceso denegado: El conductor no tiene una ruta asignada y en progreso para hoy." 
-      }, { status: 403 });
+      await registrarFallo("Conductor NO tiene un envío activo para hoy", uidLimpio, conductor.nombre);
+      return NextResponse.json({ error: "Sin ruta asignada" }, { status: 403 });
     }
 
-    // Extraemos la patente y el ID del vehículo directamente desde el Envío
+    // Extraemos datos
     const vehiculoId = envioActivo.recursos.vehiculoId;
     const patente = envioActivo.recursos.patente;
 
-    // ----------------------------------------------------------------------
-    // Lógica de deducción de Entrada/Salida
-    // ----------------------------------------------------------------------
-    const ultimoMovimiento = await LecturaAcceso.findOne({ 'vehiculo.vehiculoId': vehiculoId })
-                                                .sort({ fechaHora: -1 });
+    // Lógica de Entrada/Salida
+    const ultimoMovimiento = await LecturaAcceso.findOne({ 'vehiculo.vehiculoId': vehiculoId }).sort({ fechaHora: -1 });
+    const movimientoDeducido = (ultimoMovimiento && ultimoMovimiento.tipoMovimiento === 'ENTRADA') ? 'SALIDA' : 'ENTRADA';
 
-    const movimientoDeducido = (ultimoMovimiento && ultimoMovimiento.tipoMovimiento === 'ENTRADA') 
-                               ? 'SALIDA' 
-                               : 'ENTRADA';
-
-    // 4. Registramos el Acceso con los datos cruzados
+    // 5. ACCESO EXITOSO - Registramos y abrimos barrera
     await LecturaAcceso.create({
       tipoMovimiento: movimientoDeducido,
-      metodo: 'AUTOMATICO', // Indicamos que fue por RFID
+      metodo: 'AUTOMATICO', 
       estado: 'EXITOSO',
       conductor: {
         usuarioId: conductor._id,
         nombre: conductor.nombre,
-        rut: conductor.rut // <-- ✨ ¡AQUÍ ESTÁ LA MAGIA AÑADIDA! ✨
+        rut: conductor.rut
       },
-      vehiculo: {
-        vehiculoId: vehiculoId,
-        patente: patente
-      },
+      vehiculo: { vehiculoId: vehiculoId, patente: patente },
       observaciones: `Asociado automáticamente al envío: ${envioActivo.numeroEnvio}`
     });
 
-    // ----------------------------------------------------------------------
-    // 🚀 MAGIA LOGÍSTICA: Actualizamos el estado del Envío automáticamente
-    // ----------------------------------------------------------------------
+    // Actualizamos estado logístico
     if (movimientoDeducido === 'SALIDA' && envioActivo.estado === 'PROGRAMADO') {
       envioActivo.estado = 'EN_RUTA';
       envioActivo.logistica.fechaSalidaEstimada = new Date(); 
@@ -99,13 +102,7 @@ export async function POST(req: Request) {
       await envioActivo.save();
     }
 
-    // 5. Le respondemos al ESP32 que todo salió bien (para que prenda la luz verde)
-    return NextResponse.json({ 
-      mensaje: "Acceso autorizado", 
-      movimiento: movimientoDeducido,
-      conductor: conductor.nombre,
-      envioAsociado: envioActivo.numeroEnvio
-    }, { status: 201 });
+    return NextResponse.json({ mensaje: "Acceso autorizado", movimiento: movimientoDeducido, conductor: conductor.nombre }, { status: 201 });
 
   } catch (error: any) {
     console.error("Error en sensor RFID:", error);
