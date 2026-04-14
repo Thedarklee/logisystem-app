@@ -9,7 +9,13 @@ export default function AccesosPage() {
   const [stats, setStats] = useState({ entradas: 0, salidas: 0, manuales: 0, alertas: 0 });
   const [loading, setLoading] = useState(true);
 
-  // Función para cargar los datos desde la API
+  // --- 1. ESTADOS PARA LOS FILTROS ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [filterTipo, setFilterTipo] = useState("");
+  const [filterEstado, setFilterEstado] = useState("");
+
   const cargarDatos = async () => {
     try {
       const res = await fetch('/api/dashboard/stats');
@@ -32,6 +38,37 @@ export default function AccesosPage() {
   useEffect(() => {
     cargarDatos();
   }, []);
+
+  // --- 2. LÓGICA DE FILTRADO (Se ejecuta automáticamente al cambiar un filtro) ---
+  const filteredAccesos = accesos.filter((acceso: any) => {
+    // A. Búsqueda por Texto (Nombre, RUT o Patente)
+    const searchLower = searchTerm.toLowerCase();
+    const matchSearch = 
+      (acceso.conductor?.nombre || "").toLowerCase().includes(searchLower) ||
+      (acceso.conductor?.rut || "").toLowerCase().includes(searchLower) ||
+      (acceso.vehiculo?.patente || "").toLowerCase().includes(searchLower);
+
+    // B. Filtros de Selectores
+    const matchTipo = filterTipo ? acceso.tipoMovimiento === filterTipo : true;
+    const matchEstado = filterEstado ? acceso.estado === filterEstado : true;
+
+    // C. Filtros de Fecha
+    // Se añade T00:00:00 y T23:59:59 para abarcar el día completo de la zona horaria local
+    const matchDateFrom = dateFrom ? new Date(acceso.fechaHora) >= new Date(dateFrom + 'T00:00:00') : true;
+    const matchDateTo = dateTo ? new Date(acceso.fechaHora) <= new Date(dateTo + 'T23:59:59') : true;
+
+    // Un registro solo se muestra si cumple TODOS los filtros activos
+    return matchSearch && matchTipo && matchEstado && matchDateFrom && matchDateTo;
+  });
+
+  // Función rápida para limpiar todos los filtros
+  const limpiarFiltros = () => {
+    setSearchTerm("");
+    setDateFrom("");
+    setDateTo("");
+    setFilterTipo("");
+    setFilterEstado("");
+  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 w-full">
@@ -70,6 +107,86 @@ export default function AccesosPage() {
         </div>
       </div>
 
+      {/* --- 3. BARRA DE HERRAMIENTAS Y FILTROS --- */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-end">
+        
+        {/* Buscador de Texto */}
+        <div className="flex-1 w-full md:min-w-[250px]">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Buscar personal o vehículo</label>
+          <div className="relative mt-1">
+            <span className="material-symbols-outlined absolute left-3 top-3 text-slate-400 text-sm">search</span>
+            <input 
+              type="text" 
+              placeholder="RUT, Nombre o Patente..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-50 rounded-xl pl-10 pr-4 py-2 border-none focus:ring-2 focus:ring-violet-800 outline-none text-sm font-semibold text-slate-700 placeholder-slate-400"
+            />
+          </div>
+        </div>
+
+        {/* Filtro Fecha Desde */}
+        <div className="w-full md:w-auto">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Desde</label>
+          <input 
+            type="date" 
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-full mt-1 bg-slate-50 rounded-xl px-4 py-2 border-none focus:ring-2 focus:ring-violet-800 outline-none text-sm font-semibold text-slate-700"
+          />
+        </div>
+
+        {/* Filtro Fecha Hasta */}
+        <div className="w-full md:w-auto">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Hasta</label>
+          <input 
+            type="date" 
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-full mt-1 bg-slate-50 rounded-xl px-4 py-2 border-none focus:ring-2 focus:ring-violet-800 outline-none text-sm font-semibold text-slate-700"
+          />
+        </div>
+
+        {/* Filtro Tipo Movimiento */}
+        <div className="w-full md:w-auto">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tipo</label>
+          <select 
+            value={filterTipo}
+            onChange={(e) => setFilterTipo(e.target.value)}
+            className="w-full mt-1 bg-slate-50 rounded-xl px-4 py-2 border-none focus:ring-2 focus:ring-violet-800 outline-none text-sm font-semibold text-slate-700"
+          >
+            <option value="">Todos</option>
+            <option value="ENTRADA">Entradas</option>
+            <option value="SALIDA">Salidas</option>
+          </select>
+        </div>
+
+        {/* Filtro Estado */}
+        <div className="w-full md:w-auto">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Estado</label>
+          <select 
+            value={filterEstado}
+            onChange={(e) => setFilterEstado(e.target.value)}
+            className="w-full mt-1 bg-slate-50 rounded-xl px-4 py-2 border-none focus:ring-2 focus:ring-violet-800 outline-none text-sm font-semibold text-slate-700"
+          >
+            <option value="">Todos</option>
+            <option value="EXITOSO">Exitoso</option>
+            <option value="FALLIDO">Fallido</option>
+          </select>
+        </div>
+
+        {/* Botón Limpiar */}
+        {(searchTerm || dateFrom || dateTo || filterTipo || filterEstado) && (
+          <button 
+            onClick={limpiarFiltros}
+            className="w-full md:w-auto px-4 py-2 mt-2 md:mt-0 bg-red-50 text-red-600 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors flex items-center justify-center gap-1"
+          >
+            <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+            Limpiar
+          </button>
+        )}
+      </div>
+
       {/* Data Table Dinámica */}
       <section className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100">
         <div className="overflow-x-auto">
@@ -79,7 +196,6 @@ export default function AccesosPage() {
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Fecha/Hora</th>
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Tipo</th>
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Método</th>
-                {/* Cambiamos el título de la columna aquí */}
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Personal / RUT</th>
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Vehículo</th>
                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Estado</th>
@@ -88,9 +204,14 @@ export default function AccesosPage() {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr><td colSpan={6} className="text-center py-10 text-slate-400">Cargando historial...</td></tr>
-              ) : accesos.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-10 text-slate-400 italic">No hay registros de acceso recientes.</td></tr>
-              ) : accesos.map((acceso: any) => (
+              ) : filteredAccesos.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-12">
+                    <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">search_off</span>
+                    <p className="text-slate-500 font-medium">No se encontraron accesos con esos filtros.</p>
+                  </td>
+                </tr>
+              ) : filteredAccesos.map((acceso: any) => (
                 <tr key={acceso._id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-8 py-6">
                     <div className="flex flex-col">
@@ -121,14 +242,12 @@ export default function AccesosPage() {
                     </span>
                   </td>
                   
-                  {/* === COLUMNA CONDUCTOR Y RUT ACTUALIZADA === */}
                   <td className="px-8 py-6">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-800">
                         {acceso.conductor?.nombre || 'Desconocido'}
                       </span>
                       <span className="text-[10px] font-mono text-slate-500 mt-0.5">
-                        {/* Ahora la lectura es directa y limpia */}
                         RUT: {acceso.conductor?.rut || 'NO REGISTRADO'}
                       </span>
                     </div>
