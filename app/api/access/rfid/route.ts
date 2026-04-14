@@ -12,23 +12,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { uid } = body;
 
-    // ----------------------------------------------------------------------
-    // 🛡️ FUNCIÓN ESPÍA: Guarda los intentos fallidos en la Base de Datos
-    // ----------------------------------------------------------------------
-    const registrarFallo = async (motivo: string, uidTarjeta: string = "N/A", nombreConductor: string = "Desconocido") => {
-      await LecturaAcceso.create({
-        tipoMovimiento: 'ENTRADA', // Por defecto para que no rompa el modelo
-        metodo: 'AUTOMATICO', 
-        estado: 'FALLIDO',
-        conductor: { nombre: nombreConductor, rut: 'N/A' },
-        vehiculo: { patente: 'N/A' },
-        observaciones: `ACCESO DENEGADO: ${motivo} (UID Tarjeta: ${uidTarjeta})`
-      });
-    };
-
-    // 1. Validación básica
+    // 1. Validación básica (Si no hay UID, rechazamos sin guardar nada)
     if (!uid) {
-      await registrarFallo("UID no proporcionado por el lector");
       return NextResponse.json({ error: "UID no proporcionado" }, { status: 400 });
     }
 
@@ -37,24 +22,20 @@ export async function POST(req: Request) {
     // 2. Buscamos la Tarjeta
     const tarjeta = await Tarjeta.findOne({ uid: uidLimpio });
     if (!tarjeta) {
-      await registrarFallo("Tarjeta no registrada en el sistema", uidLimpio);
       return NextResponse.json({ error: "Tarjeta no registrada" }, { status: 404 });
     }
 
     if (tarjeta.estado !== 'ACTIVA') {
-      await registrarFallo(`Tarjeta en estado: ${tarjeta.estado}`, uidLimpio);
       return NextResponse.json({ error: "Tarjeta bloqueada o inactiva" }, { status: 403 });
     }
 
     // 3. Buscamos al Conductor
     if (!tarjeta.usuarioAsignado) {
-      await registrarFallo("Tarjeta sin conductor asignado", uidLimpio);
       return NextResponse.json({ error: "Tarjeta sin conductor" }, { status: 403 });
     }
     
     const conductor = await Usuario.findById(tarjeta.usuarioAsignado);
     if (!conductor) {
-      await registrarFallo("El conductor de esta tarjeta ya no existe en la BD", uidLimpio);
       return NextResponse.json({ error: "Conductor fantasma" }, { status: 404 });
     }
 
@@ -65,11 +46,10 @@ export async function POST(req: Request) {
     });
 
     if (!envioActivo) {
-      await registrarFallo("Conductor NO tiene un envío activo para hoy", uidLimpio, conductor.nombre);
       return NextResponse.json({ error: "Sin ruta asignada" }, { status: 403 });
     }
 
-    // Extraemos datos
+    // Extraemos datos para el registro exitoso
     const vehiculoId = envioActivo.recursos.vehiculoId;
     const patente = envioActivo.recursos.patente;
 
@@ -77,7 +57,7 @@ export async function POST(req: Request) {
     const ultimoMovimiento = await LecturaAcceso.findOne({ 'vehiculo.vehiculoId': vehiculoId }).sort({ fechaHora: -1 });
     const movimientoDeducido = (ultimoMovimiento && ultimoMovimiento.tipoMovimiento === 'ENTRADA') ? 'SALIDA' : 'ENTRADA';
 
-    // 5. ACCESO EXITOSO - Registramos y abrimos barrera
+    // 5. ACCESO EXITOSO - (ESTE ES EL ÚNICO MOMENTO DONDE GUARDAMOS EN LA BD)
     await LecturaAcceso.create({
       tipoMovimiento: movimientoDeducido,
       metodo: 'AUTOMATICO', 
@@ -102,6 +82,7 @@ export async function POST(req: Request) {
       await envioActivo.save();
     }
 
+    // Le damos luz verde al Arduino
     return NextResponse.json({ mensaje: "Acceso autorizado", movimiento: movimientoDeducido, conductor: conductor.nombre }, { status: 201 });
 
   } catch (error: any) {
