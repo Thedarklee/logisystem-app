@@ -72,7 +72,8 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-1.5">
-              <label className="block text-[0.6875rem] font-bold uppercase tracking-wider text-gray-500" htmlFor="email">Email</label>
+              {/* Aquí estaba el único texto en inglés (Email -> Correo Electrónico) */}
+              <label className="block text-[0.6875rem] font-bold uppercase tracking-wider text-gray-500" htmlFor="email">Correo Electrónico</label>
               <div className="relative">
                 <input 
                   type="email" 
