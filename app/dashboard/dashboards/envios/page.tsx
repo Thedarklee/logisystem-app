@@ -13,14 +13,20 @@ type EnviosData = {
 
 export default function DashboardEnviosPage() {
   const [data, setData] = useState<EnviosData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/dashboards/envios")
       .then((r) => r.json())
-      .then(setData)
-      .catch(console.error);
+      .then((json) => {
+        if (json.error) throw new Error(json.error);
+        setData(json);
+      })
+      .catch((e: Error) => setError(e.message));
   }, []);
 
+  if (error)
+    return <p className="p-10 text-red-500 font-bold">Error: {error}</p>;
   if (!data)
     return <p className="p-10 text-violet-900 font-bold">Cargando análisis de envíos...</p>;
 

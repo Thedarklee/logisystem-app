@@ -64,7 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </p>
         </div>
         
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto scrollbar-thin">
           {/* === RUTAS PÚBLICAS (Para Admin y Operador) === */}
           <Link href="/dashboard" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
             <span className="material-symbols-outlined">dashboard</span> Resumen

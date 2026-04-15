@@ -14,18 +14,24 @@ type OperacionalData = {
 
 export default function DashboardAccesosPage() {
   const [data, setData] = useState<OperacionalData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = () =>
       fetch("/api/dashboards/operacional")
         .then((r) => r.json())
-        .then(setData)
-        .catch(console.error);
+        .then((json) => {
+          if (json.error) throw new Error(json.error);
+          setData(json);
+        })
+        .catch((e: Error) => setError(e.message));
     load();
     const iv = setInterval(load, 30000);
     return () => clearInterval(iv);
   }, []);
 
+  if (error)
+    return <p className="p-10 text-red-500 font-bold">Error: {error}</p>;
   if (!data)
     return <p className="p-10 text-violet-900 font-bold">Cargando panel de accesos...</p>;
 
