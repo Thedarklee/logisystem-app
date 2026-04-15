@@ -87,7 +87,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-[0.6875rem] font-bold uppercase tracking-wider text-gray-500" htmlFor="password">Password</label>
+              <label className="block text-[0.6875rem] font-bold uppercase tracking-wider text-gray-500" htmlFor="password">Contraseña</label>
               <div className="relative">
                 <input 
                   type="password" 
