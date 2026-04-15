@@ -48,7 +48,6 @@ export default function DashboardPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="text-slate-400 text-[10px] uppercase tracking-widest font-black border-b border-slate-100">
-                {/* Cambiamos el encabezado aquí */}
                 <th className="pb-4 px-2">Personal / RUT</th>
                 <th className="pb-4 px-2">Vehículo</th>
                 <th className="pb-4 px-2">Tipo</th>
@@ -64,14 +63,12 @@ export default function DashboardPage() {
                 data.recientes.map((acc: any) => (
                   <tr key={acc._id} className="hover:bg-slate-50 transition-colors">
                     
-                    {/* === COLUMNA CONDUCTOR Y RUT ACTUALIZADA === */}
                     <td className="py-4 px-2">
                       <div className="flex flex-col">
                         <span className="font-bold text-slate-700">
                           {acc.conductor?.nombre || 'Desconocido'}
                         </span>
                         <span className="text-[10px] font-mono text-slate-400 mt-0.5">
-                          {/* Ahora la lectura es directa y limpia */}
                           RUT: {acc.conductor?.rut || 'NO REGISTRADO'}
                         </span>
                       </div>
