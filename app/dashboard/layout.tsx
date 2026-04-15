@@ -78,6 +78,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="material-symbols-outlined">gate</span> Accesos
           </Link>
 
+          {/* === ANALÍTICA === */}
+          <hr className="my-4 border-slate-100" />
+          <p className="px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Analítica</p>
+
+          <Link href="/dashboard/dashboards/envios" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/dashboards/envios' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
+            <span className="material-symbols-outlined">donut_small</span> Envíos
+          </Link>
+
+          <Link href="/dashboard/dashboards/operacional" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/dashboards/operacional' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
+            <span className="material-symbols-outlined">bar_chart_4_bars</span> Accesos por Hora
+          </Link>
+
+          <Link href="/dashboard/dashboards/tendencia" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all ${pathname === '/dashboard/dashboards/tendencia' ? 'text-violet-900 border-l-4 border-emerald-600 bg-slate-50' : 'text-slate-500 hover:text-violet-700 hover:bg-slate-50'}`}>
+            <span className="material-symbols-outlined">trending_up</span> Tendencia Semanal
+          </Link>
+
           {/* === RUTAS PRIVADAS (Solo para Administradores) === */}
           {userRole === 'ADMIN' && (
             <>
